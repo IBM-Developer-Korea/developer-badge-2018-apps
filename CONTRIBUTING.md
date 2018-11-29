@@ -7,5 +7,5 @@ We simply ask that when submitting a pull request, the developer must include a 
 Here is an example Signed-off-by line, which indicates that the submitter accepts the DCO:
 
 ```
-Signed-off-by: John Doe <john.doe@hisdomain.com>
+Signed-off-by: Jin Gi KONG <jgkong@kr.ibm.com>
 ```
