@@ -2,7 +2,7 @@ import network
 
 import util
 
-conf = util.Config('wifi')
+conf = util.Config('network')
 if 'sta_if' in conf:
     sta_if = network.WLAN(network.STA_IF)
     sta_if.active(True)

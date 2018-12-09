@@ -99,14 +99,14 @@ class WifiConfig:
             tried += 0.2
         if self.get_status(self.sta_if) == 'GOT_IP':
             self.set_status('Connected!')
-            config = util.Config('wifi')
+            config = util.Config('network')
             config['sta_if'] = {
                 'ssid': ssid,
                 'password': pw,
             }
             config.save()
             time.sleep(1)
-            self.set_status('WiFi configuration saved.')
+            self.set_status('Network configuration saved.')
             time.sleep(1)
             util.reboot()
         else:
