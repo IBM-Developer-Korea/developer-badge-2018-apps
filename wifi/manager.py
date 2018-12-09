@@ -4,7 +4,31 @@ import time
 
 import ugfx
 
-button_pushed = None
+import util
+
+ibm_st = ugfx.Style(ugfx.Font('IBMPlexSans_Regular22'))
+
+ibm_st.set_background(ugfx.BLACK)
+ibm_st.set_focus(ugfx.WHITE)
+ibm_st.set_pressed([
+        ugfx.WHITE,
+        ugfx.WHITE,
+        ugfx.BLACK,
+        ugfx.BLACK,
+])
+ibm_st.set_enabled([
+    ugfx.BLUE,
+    ugfx.GREEN,
+    #HTML2COLOR(0x01d7dd),
+    ugfx.HTML2COLOR(0x3c3c3b),
+    ugfx.YELLOW,
+])
+ibm_st.set_disabled([
+        ugfx.WHITE,
+        ugfx.WHITE,
+        ugfx.BLACK,
+        ugfx.BLACK,
+])
 
 class WifiConfig:
 
@@ -43,8 +67,8 @@ class WifiConfig:
                 parent=self.window)
         self.status_box.enabled(False)
 
-    def teardown(self):
-        if self.window and self.window.enabled() != 0:
+    def teardown(self, pressed=True):
+        if pressed and self.window and self.window.enabled() != 0:
             self.window.hide()
             self.window.destroy()
             ugfx.poll()
@@ -75,6 +99,16 @@ class WifiConfig:
             tried += 0.2
         if self.get_status(self.sta_if) == 'GOT_IP':
             self.set_status('Connected!')
+            config = util.Config('wifi')
+            config['sta_if'] = {
+                'ssid': ssid,
+                'password': pw,
+            }
+            config.save()
+            time.sleep(1)
+            self.set_status('WiFi configuration saved.')
+            time.sleep(1)
+            util.reboot()
         else:
             self.set_status('Connection failed.')
 
@@ -106,6 +140,7 @@ class WifiConfig:
             print(scan_config)
 
         ugfx.input_attach(ugfx.BTN_A, self.network_selected)
+        ugfx.input_attach(ugfx.BTN_B, util.reboot)
         self.window.show()
 
     def kb_handler(self, keycode):
@@ -115,6 +150,7 @@ class WifiConfig:
                 print(pw)
 
     def get_password(self):
+        ugfx.input_attach(ugfx.BTN_B, util.reboot)
         w = self.create_window()
         edit_size = 40
         ugfx.Textbox(5, 0, w.width() - 12, edit_size, text='Input password', parent=w).enabled(False)
