@@ -5,7 +5,7 @@ import uos
 
 import ugfx
 
-def reboot():
+def reboot(pressed=True):
     machine.reset()
 
 def restart():
@@ -46,7 +46,7 @@ def get_version():
         return 0.0
     return version
 
-def startup():
+def startup(timer=None):
     conf = Config('global')
     for app in uos.listdir('/apps'):
         try:

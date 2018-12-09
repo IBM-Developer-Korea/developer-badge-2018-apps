@@ -1,7 +1,7 @@
 #!/bin/bash
 
 FSBIN=fatfs.bin
-DEFAULT_APPS="wifi"
+DEFAULT_APPS="netconfig"
 
 mcopy -V > /dev/null || {
 	echo "Install mtools to create FAT filesystem image"
@@ -35,9 +35,10 @@ for file in *; do
 done
 popd
 
-mmd -i ${FSBIN} apps
 mcopy -i ${FSBIN} config ::
 
+mmd -i ${FSBIN} apps
+
 for app in ${DEFAULT_APPS}; do
-	mcopy -i ${FSBIN} ${app} ::apps/
+	mcopy -i ${FSBIN} apps/${app} ::apps/
 done
