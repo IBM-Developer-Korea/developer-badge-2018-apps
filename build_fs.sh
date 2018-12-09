@@ -36,7 +36,7 @@ done
 popd
 
 mmd -i ${FSBIN} apps
-mmd -i ${FSBIN} config
+mcopy -i ${FSBIN} config ::
 
 for app in ${DEFAULT_APPS}; do
 	mcopy -i ${FSBIN} ${app} ::apps/

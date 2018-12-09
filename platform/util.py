@@ -1,13 +1,14 @@
-import ugfx
+import gc
+import machine
 import ujson as json
 import uos
 
+import ugfx
+
 def reboot():
-    import machine
     machine.reset()
 
 def restart():
-    import machine
     machine.deepsleep(1)
 
 def unload(mod):
@@ -28,10 +29,14 @@ def unload(mod):
         gc.collect()
 
 def run(appname):
-    import machine
     rtc = machine.RTC()
     rtc.memory(appname)
+    print('Restrt to run app {}'.format(appname))
     restart()
+
+def execfile(filename):
+    print('Run {}'.format(filename))
+    return exec(open(filename).read(), globals())
 
 def get_version():
     try:
@@ -40,6 +45,28 @@ def get_version():
     except OSError:
         return 0.0
     return version
+
+def startup():
+    conf = Config('global')
+    for app in uos.listdir('/apps'):
+        try:
+            uos.stat('/apps/{}/boot.py'.format(app))
+        except OSError:
+            pass
+        else:
+            execfile('/apps/{}/boot.py'.format(app))
+            gc.collect()
+    del conf
+    gc.collect()
+
+def display_logo():
+    ugfx.clear(ugfx.BLACK)
+    ugfx.string(280, 228, 'v{}'.format(get_version()),
+            'IBMPlexSans_Regular12', ugfx.WHITE)
+    ugfx.display_image(40, 70, bytearray(open('ibm_logo.gif', 'rb').read()), 2, 300)
+    ugfx.string_box(0, 140, ugfx.width(), 50, 'Developer Day 2018',
+            'IBMPlexSans_Regular22', ugfx.HTML2COLOR(0x01d7dd), ugfx.justifyCenter)
+    gc.collect()
 
 
 class Config:
@@ -50,17 +77,22 @@ class Config:
         self.data = {}
         try:
             with open('/config/{}.json'.format(name)) as fp:
-                data = json.load(fp)
+                self.data = json.load(fp)
         except OSError:
             print('Cannot find config file, create new one.')
         except Exception as e:
             print(e)
 
     def __getitem__(self, key):
+        if not key in self.data:
+            raise KeyError(key)
         return self.data.__getitem__(key)
 
     def __setitem__(self, key, value):
         return self.data.__setitem__(key, value)
+
+    def __contains__(self, key):
+        return key in self.data
 
     def save(self):
         # Create config_dir if do not exists
@@ -70,7 +102,3 @@ class Config:
             uos.mkdir(self.config_dir)
         with open('{}/{}.json'.format(self.config_dir, self.name), 'w') as fp:
             json.dump(self.data, fp)
-
-
-def abc():
-    return 1
