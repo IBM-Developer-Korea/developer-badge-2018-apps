@@ -30,17 +30,31 @@ ibm_st.set_disabled([
         ugfx.BLACK,
 ])
 
-class WifiConfig:
+
+class ConfigManager:
 
     def __init__(self):
-        self.sta_if = network.WLAN(network.STA_IF)
-        self.ap_if = network.WLAN(network.AP_IF)
         self.status_box = None
-        self.saved_config = None
         self.window = None
-
         ugfx.input_init()
         ugfx.set_default_font('IBMPlexSans_Regular22')
+
+    def kb_handler(self, keycode):
+        if keycode == 13: # GKEY_ENTER
+            text = self.kb_input.text()
+            self.kb.destroy()
+            self.kb_input.destroy()
+            self.kb_callback(text)
+
+    def get_input(self, label, callback):
+        ugfx.input_attach(ugfx.BTN_B, util.reboot)
+        w = self.create_window()
+        edit_size = 40
+        ugfx.Textbox(5, 0, w.width() - 12, edit_size, text=label, parent=w).enabled(False)
+        self.kb_input = ugfx.Textbox(5, 7 + edit_size, w.width() - 12, edit_size, parent=w)
+        self.kb = ugfx.Keyboard(5, edit_size * 2 + 12, w.width() - 12, w.height() - edit_size * 2 - 20, parent=w)
+        self.kb_callback = callback
+        self.kb.set_keyboard_callback(self.kb_handler)
 
     def get_status(self, interface):
         for stat in dir(network):
@@ -57,7 +71,7 @@ class WifiConfig:
         if self.window and self.window.enabled != 0:
             self.teardown()
             del self.window
-        self.window = ugfx.Container(5, 5, ugfx.width() - 10, ugfx.height() - 10)
+        self.window = ugfx.Container(0, 0, ugfx.width(), ugfx.height())
         self.window.show()
         return self.window
 
@@ -72,6 +86,15 @@ class WifiConfig:
             self.window.hide()
             self.window.destroy()
             ugfx.poll()
+
+
+class WifiConfig(ConfigManager):
+
+    def __init__(self):
+        self.sta_if = network.WLAN(network.STA_IF)
+        self.ap_if = network.WLAN(network.AP_IF)
+        self.saved_config = None
+        super().__init__()
 
     def scan(self):
         if not self.sta_if.active():
@@ -143,17 +166,8 @@ class WifiConfig:
         ugfx.input_attach(ugfx.BTN_B, util.reboot)
         self.window.show()
 
-    def kb_handler(self, keycode):
-        if keycode == 13: # GKEY_ENTER
-            pw = self.pw_input.text()
-            if self.connect_network(self.saved_config[0].decode('utf-8'), pw):
-                print(pw)
+    def pw_callback(self, pw):
+        self.connect_network(self.saved_config[0].decode('utf-8'), pw)
 
     def get_password(self):
-        ugfx.input_attach(ugfx.BTN_B, util.reboot)
-        w = self.create_window()
-        edit_size = 40
-        ugfx.Textbox(5, 0, w.width() - 12, edit_size, text='Input password', parent=w).enabled(False)
-        self.pw_input = ugfx.Textbox(5, 7 + edit_size, w.width() - 12, edit_size, parent=w)
-        self.kb = ugfx.Keyboard(5, edit_size * 2 + 12, w.width() - 12, w.height() - edit_size * 2 - 20, parent=w)
-        self.kb.set_keyboard_callback(self.kb_handler)
+        self.get_input('Input password', self.pw_callback)
