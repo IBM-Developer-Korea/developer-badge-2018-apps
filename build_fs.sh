@@ -1,7 +1,7 @@
 #!/bin/bash
 
 FSBIN=fatfs.bin
-DEFAULT_APPS="netconfig"
+DEFAULT_APPS="netconfig home"
 
 mcopy -V > /dev/null || {
 	echo "Install mtools to create FAT filesystem image"

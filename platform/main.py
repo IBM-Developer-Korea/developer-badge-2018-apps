@@ -16,11 +16,11 @@ if appname:
     gc.collect()
     __import__(appname.decode('ascii'))
 else: # Cold boot
-    display_logo()
+    util.display_logo()
     util.startup()
     try:
         import home
-    except:
-        pass
+    except Exception as e:
+        print(e)
     else:
-        gc.collect
+        gc.collect()
