@@ -4,6 +4,7 @@ import uos
 import ugfx
 
 from home import styles
+from home import ota
 import util
 
 
@@ -82,16 +83,19 @@ class ButtonGroup:
             for button in self.btns:
                 button.btn.destroy()
 
+
 class Display:
 
     menus = ['Apps', 'Config', 'Status']
+    default_font = 'IBMPlexMono_Bold24'
 
     def __init__(self):
         self.window = None
         self.widgets = []
 
         ugfx.input_init()
-        ugfx.set_default_font('IBMPlexMono_Bold24')
+        ugfx.set_default_font(self.default_font)
+        ugfx.input_attach(ugfx.BTN_B, self.restart)
         self.main()
 
     def destroy(self, pressed=True):
@@ -106,6 +110,11 @@ class Display:
         w = self.window
         w.show()
         w.area(0, 0, w.width(), w.height(), ugfx.HTML2COLOR(0x3c3c3b))
+
+    def restart(self, pressed=True):
+        if not pressed:
+            self.destroy()
+            self.main()
 
     def main(self):
         self.create_window()
@@ -140,5 +149,57 @@ class Display:
     def Config(self, data=None):
         self.destroy()
 
+    def create_status_box(self):
+        self.status_box = ugfx.Textbox(10, self.window.height() - 60,
+                self.window.width() - 20, 40,
+                parent=self.window)
+        self.status_box.enabled(False)
+
+    def set_status(self, text):
+        print(text)
+        if self.status_box and self.status_box.visible():
+            self.status_box.text(text)
+
+    def install_ota(self, data):
+        self.destroy()
+        print('On the air update..')
+        self.create_window()
+        ugfx.Label(80, 60, 160, 120, text='Upgrading..\nto {}'.format(data['version']),
+            parent=self.window)
+        print(data)
+        ota.install_ota(data, '/')
+
     def Status(self, data=None):
         self.destroy()
+        self.create_window()
+        w = self.window
+        y = 10
+        gap = 5
+        height = 35
+        ugfx.Label(10, y, w.width() - 20, height, 'Platform: {}'.format(util.get_version()), parent=w)
+        y += gap + height
+        ugfx.Label(10, y, w.width() - 20, height, 'Release: {}'.format(uos.uname()[2]), parent=w)
+        y += gap + height
+        ugfx.Label(10, y, w.width() - 20, height, 'firmware:', parent=w)
+        ugfx.set_default_font('IBMPlexMono_Bold18')
+        y += height
+        ugfx.Label(10, y, w.width() - 20, height + 10, '{}'.format(uos.uname()[3]), parent=w)
+        ugfx.set_default_font(self.default_font)
+        ugfx.set_default_font('IBMPlexSans_Regular18')
+        self.create_status_box()
+        ugfx.set_default_font(self.default_font)
+
+        try:
+            ota_data = ota.check_version()
+        except ota.OtaException as e:
+            self.set_status('Error: {}'.format(e))
+        else:
+            if ota_data:
+                self.status_box.destroy()
+                ugfx.Label(10, 180, 200, 40, text='New: {}'.format(ota_data['version']),
+                    parent=w)
+                self.btngroup = ButtonGroup(self.window, 190, 180, 110, 40, 10)
+                self.btngroup.add('Upgrade', self.install_ota, ota_data)
+                self.btngroup.end()
+            else:
+                self.set_status('Up to date')
