@@ -28,7 +28,7 @@ def unload(mod):
         import gc
         gc.collect()
 
-def run(appname):
+def run(appname='home'):
     rtc = machine.RTC()
     rtc.memory(appname)
     print('Restrt to run app {}'.format(appname))

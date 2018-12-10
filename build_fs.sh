@@ -42,3 +42,23 @@ mmd -i ${FSBIN} apps
 for app in ${DEFAULT_APPS}; do
 	mcopy -i ${FSBIN} apps/${app} ::apps/
 done
+
+
+# Create and push OTA update
+
+TARGET=$1
+
+PLATFORM_VER=$(cat platform/version.txt)
+OTA_FN=badge-platform-ota-${PLATFORM_VER}.tar.gz
+
+# https://git-scm.com/docs/git-archive
+# need to remove pax_global_header
+git archive --format=tgz HEAD^{tree} -o ${OTA_FN} platform
+cat << __EOF__ > version.json
+{
+  "version": ${PLATFORM_VER},
+  "ota_url": "https://badge.arcy.me/ota/${OTA_FN}"
+}
+__EOF__
+scp version.json ${OTA_FN} $TARGET
+rm version.json ${OTA_FN}
