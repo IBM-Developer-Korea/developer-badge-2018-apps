@@ -6,6 +6,10 @@ import ugfx
 
 import util
 
+from home import h
+h.destroy()
+from home.launcher import ButtonGroup, Button, Display
+
 ibm_st = ugfx.Style(ugfx.Font('IBMPlexSans_Regular22'))
 
 ibm_st.set_background(ugfx.BLACK)
@@ -171,3 +175,54 @@ class WifiConfig(ConfigManager):
 
     def get_password(self):
         self.get_input('Input password', self.pw_callback)
+
+
+class WebreplConfig(ConfigManager):
+
+    CONFIG = '/webrepl_cfg.py'
+
+    def __init__(self):
+        super().__init__()
+
+    def pw_callback(self, passwd):
+        with open(self.CONFIG, "w") as f:
+            f.write("PASS = %r\n" % passwd)
+        self.create_window()
+        self.create_status_box()
+        self.set_status('Webrepl password saved.')
+        time.sleep(1)
+        util.reboot()
+
+    def main(self):
+        ugfx.input_attach(ugfx.BTN_A, None)
+        self.get_input('New password (4-9 chars)', self.pw_callback)
+
+
+class Status(Display):
+
+    menus = ['WiFi', 'Webrepl']
+
+    def title(self):
+        self.window.text(60, 20, 'Network config', ugfx.HTML2COLOR(0x01d7dd))
+
+    def main(self):
+        self.create_window()
+        self.title()
+        self.btngroup = ButtonGroup(self.window, 80, 110, 140, 40, 10)
+        self.widgets.append(self.btngroup)
+        sta_if = network.WLAN(network.STA_IF)
+        ugfx.Label(40, 60, 240, 30, text=sta_if.ifconfig()[0], parent=self.window)
+
+        for menu in self.menus:
+            self.btngroup.add(menu, getattr(self, menu))
+        self.btngroup.end()
+
+    def WiFi(self, data=None):
+        self.destroy()
+        m = WifiConfig()
+        m.list_network()
+
+    def Webrepl(self, data=None):
+        self.destroy()
+        w = WebreplConfig()
+        w.main()
