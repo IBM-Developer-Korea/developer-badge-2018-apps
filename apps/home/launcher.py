@@ -15,10 +15,11 @@ class Button:
         self.callback = callback
 
     def defocus(self):
-        self.btn.detach_input(0)
+        #self.btn.detach_input(0)
+        pass
 
     def focus(self, toggle=ugfx.BTN_A):
-        self.btn.attach_input(toggle, 0)
+        #self.btn.attach_input(toggle, 0)
         self.btn.set_focus()
 
 
@@ -86,7 +87,7 @@ class ButtonGroup:
 
 class Display:
 
-    menus = ['Apps', 'Config', 'Status']
+    menus = ['Apps', 'Status']
     default_font = 'IBMPlexMono_Bold24'
 
     def __init__(self):
@@ -96,7 +97,6 @@ class Display:
         ugfx.input_init()
         ugfx.set_default_font(self.default_font)
         ugfx.input_attach(ugfx.BTN_B, self.restart)
-        self.main()
 
     def destroy(self, pressed=True):
         if pressed and self.window and self.window.enabled():
@@ -116,10 +116,13 @@ class Display:
             self.destroy()
             self.main()
 
-    def main(self):
-        self.create_window()
+    def title(self):
         self.window.text(10, 20, 'IBM', ugfx.WHITE)
         self.window.text(60, 20, 'Developer Day 2018', ugfx.HTML2COLOR(0x01d7dd))
+
+    def main(self):
+        self.create_window()
+        self.title()
         self.btngroup = ButtonGroup(self.window, 80, 60, 140, 40, 10)
         self.widgets.append(self.btngroup)
 
