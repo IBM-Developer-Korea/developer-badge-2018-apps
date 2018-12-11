@@ -43,6 +43,10 @@ for app in ${DEFAULT_APPS}; do
 	mcopy -i ${FSBIN} apps/${app} ::apps/
 done
 
+SIZE=0x$(hexdump fatfs.bin |tail -3 |head -1 |cut -b -4)
+echo ${SIZE}
+dd if=${FSBIN} of=tmp.bin bs=0x1000 count=$[${SIZE}+1]
+mv tmp.bin ${FSBIN}
 
 # Create and push OTA update
 
