@@ -6,8 +6,6 @@ import ugfx
 
 import util
 
-from home import h
-h.destroy()
 from home.launcher import ButtonGroup, Button, Display
 
 ibm_st = ugfx.Style(ugfx.Font('IBMPlexSans_Regular22'))

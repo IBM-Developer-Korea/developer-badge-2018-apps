@@ -96,7 +96,7 @@ class Display:
 
         ugfx.input_init()
         ugfx.set_default_font(self.default_font)
-        ugfx.input_attach(ugfx.BTN_B, self.restart)
+        ugfx.input_attach(ugfx.BTN_B, self.reload)
 
     def destroy(self, pressed=True):
         if pressed and self.window and self.window.enabled():
@@ -112,7 +112,7 @@ class Display:
         w.show()
         w.area(0, 0, w.width(), w.height(), ugfx.HTML2COLOR(0x3c3c3b))
 
-    def restart(self, pressed=True):
+    def reload(self, pressed=True):
         if not pressed:
             self.destroy()
             self.main()
