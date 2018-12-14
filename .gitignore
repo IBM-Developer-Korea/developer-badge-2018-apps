@@ -1,2 +1,2 @@
-fatfs.bin
+build/
 *.sw[op]

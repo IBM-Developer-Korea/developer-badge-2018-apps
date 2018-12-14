@@ -1,6 +1,18 @@
 #!/bin/bash
 
-FSBIN=fatfs.bin
+err_report() {
+    echo "Error on line $1"
+    exit 1
+}
+
+trap 'err_report $LINENO' ERR
+
+
+PROJ_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+BUILD_DIR=${PROJ_DIR}/build
+mkdir -p ${BUILD_DIR}
+
+FSBIN=${BUILD_DIR}/fatfs.bin
 DEFAULT_APPS="netconfig home"
 
 mcopy -V > /dev/null || {
@@ -29,12 +41,13 @@ echo -n -e \\xf8\\xff\\xff | \
 dd of=${FSBIN} conv=notrunc bs=4096 seek=1
 
 # Install platform tools
-pushd platform
+pushd ${PROJ_DIR}/platform
 for file in *; do
-	mcopy -i ../${FSBIN} ${file} ::
+	mcopy -i ${FSBIN} ${file} ::
 done
 popd
 
+pushd ${PROJ_DIR}
 mcopy -i ${FSBIN} config ::
 
 mmd -i ${FSBIN} apps
@@ -43,14 +56,16 @@ for app in ${DEFAULT_APPS}; do
 	mcopy -i ${FSBIN} apps/${app} ::apps/
 done
 
-SIZE=0x$(hexdump fatfs.bin |tail -3 |head -1 |cut -b -4)
-echo ${SIZE}
+SIZE=0x$(hexdump ${FSBIN} |tail -3 |head -1 |cut -b -4)
 dd if=${FSBIN} of=tmp.bin bs=0x1000 count=$[${SIZE}+1]
 mv tmp.bin ${FSBIN}
+
 
 # Create and push OTA update
 
 TARGET=$1
+OTA_DIR=${BUILD_DIR}/ota
+mkdir -p ${OTA_DIR}
 
 PLATFORM_VER=$(cat platform/version.txt)
 OTA_FN=badge-platform-ota-${PLATFORM_VER}.tar.gz
@@ -64,5 +79,31 @@ cat << __EOF__ > version.json
   "ota_url": "https://badge.arcy.me/ota/${OTA_FN}"
 }
 __EOF__
-scp version.json ${OTA_FN} $TARGET
-rm version.json ${OTA_FN}
+
+mv version.json ${OTA_FN} ${OTA_DIR}
+
+popd
+
+
+# Create apps repository
+
+APPS_DIR=${PROJ_DIR}/apps
+APPDROP_DIR=${BUILD_DIR}/apps
+mkdir -p ${APPDROP_DIR}
+
+pushd ${APPS_DIR}
+
+LIST_JSON=${APPDROP_DIR}/list.json
+for app in *; do
+    cp ${app}/app.json ${APPDROP_DIR}/${app}.json
+    tar czvf ${APPDROP_DIR}/${app}.tar.gz ${app}
+done
+python ${PROJ_DIR}/create_json.py ${LIST_JSON}
+
+popd
+
+# Upload
+
+if [ ! -z "${TARGET}" ]; then
+    ibmcloud cf push ${TARGET}
+fi
