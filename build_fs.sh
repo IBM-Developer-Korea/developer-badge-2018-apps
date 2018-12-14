@@ -53,7 +53,8 @@ mcopy -i ${FSBIN} config ::
 mmd -i ${FSBIN} apps
 
 for app in ${DEFAULT_APPS}; do
-	mcopy -i ${FSBIN} apps/${app} ::apps/
+	mmd -i ${FSBIN} apps/${app}
+	mcopy -i ${FSBIN} -vs apps/${app}/[^.]* ::apps/${app}/
 done
 
 SIZE=0x$(hexdump ${FSBIN} |tail -3 |head -1 |cut -b -4)
@@ -96,7 +97,7 @@ pushd ${APPS_DIR}
 LIST_JSON=${APPDROP_DIR}/list.json
 for app in *; do
     cp ${app}/app.json ${APPDROP_DIR}/${app}.json
-    tar czvf ${APPDROP_DIR}/${app}.tar.gz ${app}
+    tar czvf ${APPDROP_DIR}/${app}.tar.gz --exclude=".*" ${app}
 done
 python ${PROJ_DIR}/create_json.py ${LIST_JSON}
 
