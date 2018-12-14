@@ -1,4 +1,7 @@
 from home import launcher
 
+
 h = launcher.Display()
-h.main()
+
+def main():
+    h.main()

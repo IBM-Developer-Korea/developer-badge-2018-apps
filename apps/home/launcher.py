@@ -103,6 +103,7 @@ class Display:
             while self.widgets:
                 self.widgets.pop().destroy()
             self.window.destroy()
+            self.window = None
 
     def create_window(self):
         ugfx.clear(ugfx.BLACK)
@@ -170,7 +171,7 @@ class Display:
         ugfx.Label(80, 60, 160, 120, text='Upgrading..\nto {}'.format(data['version']),
             parent=self.window)
         print(data)
-        ota.install_ota(data, '/')
+        ota.install_url(data['ota_url'], '/')
 
     def Status(self, data=None):
         self.destroy()

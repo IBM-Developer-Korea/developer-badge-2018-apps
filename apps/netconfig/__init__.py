@@ -1,4 +1,5 @@
 from netconfig import manager
 
-s = manager.Status()
-s.main()
+def main():
+    s = manager.Status()
+    s.main()

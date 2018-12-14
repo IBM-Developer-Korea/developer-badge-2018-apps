@@ -11,10 +11,10 @@ version_url = 'https://badge.arcy.me/ota/version.json'
 class OtaException(Exception):
     pass
 
-def install_ota(data, install_path=''):
+def install_url(url, install_path=''):
     gc.collect()
 
-    f1 = upip.url_open(data['ota_url'])
+    f1 = upip.url_open(url)
     try:
         f2 = upip.uzlib.DecompIO(f1, 31)
         f3 = upip.tarfile.TarFile(fileobj=f2)

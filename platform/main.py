@@ -14,12 +14,14 @@ if appname:
     #tim = machine.Timer(-1)
     #tim.init(period=2000, mode=machine.Timer.ONE_SHOT, callback=util.startup)
     gc.collect()
-    __import__(appname.decode('ascii'))
+    app = __import__(appname.decode('ascii'))
+    app.main()
 else: # Cold boot
     util.display_logo()
     util.startup()
     try:
         import home
+        home.main()
     except Exception as e:
         print(e)
     else:
