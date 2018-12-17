@@ -1,5 +1,7 @@
 import gc
 import machine
+import network
+import time
 import ujson as json
 import uos
 
@@ -67,6 +69,15 @@ def display_logo():
     ugfx.string_box(0, 140, ugfx.width(), 50, 'Developer Day 2018',
             'IBMPlexSans_Regular22', ugfx.HTML2COLOR(0x01d7dd), ugfx.justifyCenter)
     gc.collect()
+
+def wait_network(timeout=10, interval=0.2):
+    sta_if = network.WLAN(network.STA_IF)
+    while timeout > 0:
+        if sta_if.isconnected() and sta_if.ifconfig()[0] != '0.0.0.0':
+            return True
+        time.sleep(interval)
+        timeout -= interval
+    return False
 
 
 class Config:
