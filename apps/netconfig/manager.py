@@ -8,38 +8,19 @@ import util
 
 from home.launcher import ButtonGroup, Button, Display
 
-ibm_st = ugfx.Style(ugfx.Font('IBMPlexSans_Regular22'))
 
-ibm_st.set_background(ugfx.BLACK)
-ibm_st.set_focus(ugfx.WHITE)
-ibm_st.set_pressed([
-        ugfx.WHITE,
-        ugfx.WHITE,
-        ugfx.BLACK,
-        ugfx.BLACK,
-])
-ibm_st.set_enabled([
-    ugfx.BLUE,
-    ugfx.GREEN,
-    #HTML2COLOR(0x01d7dd),
-    ugfx.HTML2COLOR(0x3c3c3b),
-    ugfx.YELLOW,
-])
-ibm_st.set_disabled([
-        ugfx.WHITE,
-        ugfx.WHITE,
-        ugfx.BLACK,
-        ugfx.BLACK,
-])
+class ConfigManager(Display):
 
+    def __init__(self, parent=None):
+        self.parent = parent
+        super().__init__()
 
-class ConfigManager:
-
-    def __init__(self):
-        self.status_box = None
-        self.window = None
-        ugfx.input_init()
-        ugfx.set_default_font('IBMPlexSans_Regular22')
+    def reload(self):
+        if self.parent:
+            self.parent.reload()
+        else:
+            self.destroy()
+            self.main()
 
     def kb_handler(self, keycode):
         if keycode == 13: # GKEY_ENTER
@@ -64,25 +45,6 @@ class ConfigManager:
                 if getattr(network, stat) == interface.status():
                     return stat.replace('STAT_', '')
 
-    def set_status(self, text):
-        print(text)
-        if self.status_box and self.status_box.visible():
-            self.status_box.text(text)
-
-    def create_window(self):
-        if self.window and self.window.enabled != 0:
-            self.teardown()
-            del self.window
-        self.window = ugfx.Container(0, 0, ugfx.width(), ugfx.height())
-        self.window.show()
-        return self.window
-
-    def create_status_box(self):
-        self.status_box = ugfx.Textbox(10, 30,
-                self.window.width() - 20, self.window.height() - 60,
-                parent=self.window)
-        self.status_box.enabled(False)
-
     def teardown(self, pressed=True):
         if pressed and self.window and self.window.enabled() != 0:
             self.window.hide()
@@ -92,11 +54,11 @@ class ConfigManager:
 
 class WifiConfig(ConfigManager):
 
-    def __init__(self):
+    def __init__(self, parent=None):
         self.sta_if = network.WLAN(network.STA_IF)
         self.ap_if = network.WLAN(network.AP_IF)
         self.saved_config = None
-        super().__init__()
+        super().__init__(parent)
 
     def scan(self):
         if not self.sta_if.active():
@@ -104,7 +66,7 @@ class WifiConfig(ConfigManager):
         self.create_status_box()
         self.set_status('Scanning..')
         self.scan_configs = self.sta_if.scan()
-        self.status_box.destroy()
+        self.close_status_box()
 
     def connect_network(self, ssid, pw=None, timeout=15):
         self.create_window()
@@ -154,8 +116,8 @@ class WifiConfig(ConfigManager):
         w = self.create_window()
         self.scan()
 
-        self.window.hide()
         self.scan_list = ugfx.List(10, 10, w.width() - 20, w.height() - 20, parent = w)
+        self.scan_list.visible(False)
         for scan_config in self.scan_configs:
             ap_name = '{} {}'.format(
                 '@' if scan_config[4] else ' ',
@@ -163,10 +125,10 @@ class WifiConfig(ConfigManager):
             )
             self.scan_list.add_item(ap_name)
             print(scan_config)
+        self.scan_list.visible(True)
 
         ugfx.input_attach(ugfx.BTN_A, self.network_selected)
         ugfx.input_attach(ugfx.BTN_B, util.reboot)
-        self.window.show()
 
     def pw_callback(self, pw):
         self.connect_network(self.saved_config[0].decode('utf-8'), pw)
@@ -178,9 +140,6 @@ class WifiConfig(ConfigManager):
 class WebreplConfig(ConfigManager):
 
     CONFIG = '/webrepl_cfg.py'
-
-    def __init__(self):
-        super().__init__()
 
     def pw_callback(self, passwd):
         with open(self.CONFIG, "w") as f:
@@ -217,10 +176,10 @@ class Status(Display):
 
     def WiFi(self, data=None):
         self.destroy()
-        m = WifiConfig()
+        m = WifiConfig(self)
         m.list_network()
 
     def Webrepl(self, data=None):
         self.destroy()
-        w = WebreplConfig()
+        w = WebreplConfig(self)
         w.main()
