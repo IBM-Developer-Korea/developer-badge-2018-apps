@@ -13,7 +13,7 @@ BUILD_DIR=${PROJ_DIR}/build
 mkdir -p ${BUILD_DIR}
 
 FSBIN=${BUILD_DIR}/fatfs.bin
-DEFAULT_APPS="netconfig home"
+DEFAULT_APPS="netconfig home appmanager"
 
 mcopy -V > /dev/null || {
 	echo "Install mtools to create FAT filesystem image"
