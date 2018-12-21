@@ -23,12 +23,12 @@ def install_url(url, install_path=''):
         f1.close()
     reboot()
 
-def check_version(timer=None):
+def download_json(url):
     sta_if = network.WLAN(network.STA_IF)
     if not sta_if.isconnected() or sta_if.ifconfig()[0] == '0.0.0.0':
         raise OtaException('OTA: Network is not ready.')
     try:
-        f = upip.url_open(version_url)
+        f = upip.url_open(url)
     except:
         raise OtaException('Cannot get ota version')
 
@@ -39,7 +39,11 @@ def check_version(timer=None):
         raise OtaException('Cannot decode OTA json data')
     else:
         f.close()
-        if data['version'] != get_version():
-            return data
-        else:
-            return None
+        return data
+
+def check_version():
+    data = download_json(version_url)
+    if data['version'] != get_version():
+        return data
+    else:
+        return None

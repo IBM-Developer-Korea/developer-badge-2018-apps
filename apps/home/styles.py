@@ -25,24 +25,23 @@ wb.set_disabled([
 
 ibm_st = ugfx.Style(ugfx.Font('IBMPlexMono_Bold24'))
 
-ibm_st.set_background(ugfx.HTML2COLOR(0x3c3c3b))
-ibm_st.set_focus(ugfx.HTML2COLOR(0x01d7dd))
+ibm_st.set_background(ugfx.WHITE)
+ibm_st.set_focus(ugfx.WHITE)
 ibm_st.set_pressed([
-    ugfx.WHITE, # Text
-    ugfx.WHITE, # Edge
+    ugfx.BLACK, # Text
+    ugfx.IBMCyan10, # Edge
     ugfx.BLACK, # Fill
     ugfx.BLACK, # Progress
 ])
 ibm_st.set_enabled([
-    ugfx.WHITE,
-    ugfx.WHITE,
-    ugfx.HTML2COLOR(0x01d7dd),
     ugfx.BLACK,
-    #ugfx.HTML2COLOR(0x3c3c3b),
+    ugfx.IBMCyan10,
+    ugfx.IBMTeal30,
+    ugfx.BLACK,
 ])
 ibm_st.set_disabled([
-    ugfx.WHITE,
-    ugfx.WHITE,
-    ugfx.BLACK,
+    ugfx.GREY,
+    ugfx.IBMCyan10,
+    ugfx.IBMCoolGrey10,
     ugfx.BLACK,
 ])

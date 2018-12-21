@@ -11,20 +11,22 @@ import util
 class Button:
     def __init__(self, grp, text, callback):
         self.btn = ugfx.Button(grp.x, grp.y, grp.w, grp.h,
-            text, parent=grp.parent)
+            text, shape=ugfx.Button.ROUNDED, parent=grp.parent)
+        self.btn.enabled(False)
         self.callback = callback
 
     def defocus(self):
         #self.btn.detach_input(0)
-        pass
+        self.btn.enabled(False)
 
     def focus(self, toggle=ugfx.BTN_A):
         #self.btn.attach_input(toggle, 0)
         self.btn.set_focus()
+        self.btn.enabled(True)
 
 
 class ButtonGroup:
-    def __init__(self, parent, x, y, w, h, gap):
+    def __init__(self, parent, x, y, w, h, gap, vertical=True):
         self.parent = parent
         self.x = x
         self.y = y
@@ -34,6 +36,13 @@ class ButtonGroup:
         self.btns = []
         self.index = 0
         self.current = None
+        self.vertical = vertical
+        if vertical:
+            self.prev_key = ugfx.JOY_UP
+            self.next_key = ugfx.JOY_DOWN
+        else:
+            self.prev_key = ugfx.JOY_LEFT
+            self.next_key = ugfx.JOY_RIGHT
 
     def add(self, text, callback, data=None):
         btn = Button(self, text, callback)
@@ -43,7 +52,10 @@ class ButtonGroup:
             self.current.next_btn = btn
             btn.prev_btn = self.current
         self.current = btn
-        self.y += self.h + self.gap
+        if self.vertical:
+            self.y += self.h + self.gap
+        else:
+            self.x += self.w + self.gap
 
     def end(self):
         if self.btns:
@@ -53,13 +65,13 @@ class ButtonGroup:
             self.attach_input()
 
     def attach_input(self):
-        ugfx.input_attach(ugfx.JOY_DOWN, self.next)
-        ugfx.input_attach(ugfx.JOY_UP, self.prev)
+        ugfx.input_attach(self.next_key, self.next)
+        ugfx.input_attach(self.prev_key, self.prev)
         ugfx.input_attach(ugfx.BTN_A, self.select)
 
     def detach_input(self):
-        ugfx.input_attach(ugfx.JOY_DOWN, None)
-        ugfx.input_attach(ugfx.JOY_UP, None)
+        ugfx.input_attach(self.next_key, None)
+        ugfx.input_attach(self.prev_key, None)
         ugfx.input_attach(ugfx.BTN_A, None)
 
     def prev(self, pressed):
@@ -81,8 +93,8 @@ class ButtonGroup:
     def destroy(self, pressed=True):
         if pressed:
             self.detach_input()
-            for button in self.btns:
-                button.btn.destroy()
+            while self.btns:
+                self.btns.pop().btn.destroy()
 
 
 class Display:
@@ -98,19 +110,22 @@ class Display:
         ugfx.set_default_font(self.default_font)
         ugfx.input_attach(ugfx.BTN_B, self.reload)
 
+    def clear(self):
+        while self.widgets:
+            self.widgets.pop().destroy()
+
     def destroy(self, pressed=True):
         if pressed and self.window and self.window.enabled():
-            while self.widgets:
-                self.widgets.pop().destroy()
+            self.clear()
             self.window.destroy()
             self.window = None
 
-    def create_window(self):
+    def create_window(self, show=True):
         ugfx.clear(ugfx.BLACK)
         self.window = ugfx.Container(0, 0, ugfx.width(), ugfx.height(), style=styles.ibm_st)
-        w = self.window
-        w.show()
-        w.area(0, 0, w.width(), w.height(), ugfx.HTML2COLOR(0x3c3c3b))
+        if show:
+            self.window.show()
+        return self.window
 
     def reload(self, pressed=True):
         if not pressed:
@@ -118,11 +133,10 @@ class Display:
             self.main()
 
     def title(self):
-        self.window.text(10, 20, 'IBM', ugfx.WHITE)
-        self.window.text(60, 20, 'Developer Day 2018', ugfx.HTML2COLOR(0x01d7dd))
+        ugfx.Label(5, 5, 310, 40, text='IBM Developer Day 2018', parent=self.window)
 
     def main(self):
-        self.create_window()
+        self.create_window(show=False)
         self.title()
         self.btngroup = ButtonGroup(self.window, 80, 60, 140, 40, 10)
         self.widgets.append(self.btngroup)
@@ -130,13 +144,14 @@ class Display:
         for menu in self.menus:
             self.btngroup.add(menu, getattr(self, menu))
         self.btngroup.end()
+        self.window.show()
 
     def run_app(self, app):
         util.run(app)
 
     def Apps(self, data=None):
         self.destroy()
-        self.create_window()
+        self.create_window(show=False)
         self.btngroup = ButtonGroup(self.window, 40, 30, 240, 40, 10)
         self.widgets.append(self.btngroup)
         for app in uos.listdir('/apps'):
@@ -149,13 +164,14 @@ class Display:
             if 'name' in data:
                 self.btngroup.add(data['name'], self.run_app, data=app)
         self.btngroup.end()
+        self.window.show()
 
     def Config(self, data=None):
         self.destroy()
 
-    def create_status_box(self):
-        self.status_box = ugfx.Textbox(10, self.window.height() - 60,
-                self.window.width() - 20, 40,
+    def create_status_box(self, y=40):
+        self.status_box = ugfx.Textbox(10, y,
+                self.window.width() - 20, self.window.height() - y - 20,
                 parent=self.window)
         self.status_box.enabled(False)
 
@@ -163,6 +179,9 @@ class Display:
         print(text)
         if self.status_box and self.status_box.visible():
             self.status_box.text(text)
+
+    def close_status_box(self):
+        self.status_box.destroy()
 
     def install_ota(self, data):
         self.destroy()

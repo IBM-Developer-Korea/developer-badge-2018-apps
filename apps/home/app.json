@@ -1,4 +1,5 @@
 {
-    "version": 1.3,
-    "desc": "Home launcher"
+    "version": 1.4,
+    "name": "Home Launcher",
+    "desc": "Default dashboard for badge"
 }
