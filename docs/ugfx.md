@@ -29,6 +29,17 @@ ugfx.thickline(50, 100, 200, 150, ugfx.GREEN, 5, False)
 ugfx.thickline(50, 150, 200, 200, ugfx.RED, 10, True)
 ```
 
+### ugfx.box(X, Y, WIDTH, HEIGHT, COLOR)
+### ugfx.area(X, Y, WIDTH, HEIGHT, COLOR)
+### ugfx.rounded_box(X, Y, WIDTH, HEIGHT, RADIUS, COLOR)
+### ugfx.fill_rounded_box(X, Y, WIDTH, HEIGHT, RADIUS, COLOR)
+```
+ugfx.box(10, 10, 120, 80, ugfx.PURPLE)
+ugfx.area(60, 40, 120, 80, ugfx.MAROON)
+ugfx.rounded_box(110, 90, 120, 80, 30, ugfx.GREY)
+ugfx.fill_rounded_box(160, 130, 120, 80, 30, ugfx.CYAN)
+```
+
 ### ugfx.circle(X, Y, RADIUS, COLOR)
 ### ugfx.fill_circle(X, Y, RADIUS, COLOR)
 ```
