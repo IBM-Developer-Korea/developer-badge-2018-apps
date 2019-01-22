@@ -16,29 +16,29 @@ class CommonView():
         #ugfx.input_init()
         ugfx.set_default_font(self.default_font)
 
-        # create_window
+        # create_container
         if full_size:
-            width = self.parent.window.width()
-            height = self.parent.window.height()
+            width = self.parent.container.width()
+            height = self.parent.container.height()
         else:
-            width = self.parent.window.width()
-            height = self.parent.window.height() - 88
+            width = self.parent.container.width()
+            height = self.parent.container.height() - 88
 
-        self.window = ugfx.Container(0, 0, width, height, style=styles.ibm_st)
+        self.container = ugfx.Container(0, 0, width, height, style=styles.ibm_st)
         if show:
-            self.window.show()
+            self.container.show()
         
         # Title Label
-        self.title_label = ugfx.Label(5, 5, 310, 40, text='', parent=self.window)
+        self.title_label = ugfx.Label(5, 5, 310, 40, text='', parent=self.container)
 
     def title(self, text=''):
         self.title_label.text(text)
     
     def show(self):
-        self.window.show()
+        self.container.show()
 
     def hide(self):
-        self.window.hide()
+        self.container.hide()
 
     def close(self):
         if self.parent.previous_view != None:
@@ -54,7 +54,7 @@ class GameListView(CommonView):
     def __init__(self, parent):
         super().__init__(parent)
         self.title('Select Game')
-        self.game_list = ugfx.List(10, 40, self.window.width() - 20, self.window.height() - 40, up=ugfx.JOY_UP, down=ugfx.JOY_DOWN, parent=self.window)
+        self.game_list = ugfx.List(10, 40, self.container.width() - 20, self.container.height() - 40, up=ugfx.JOY_UP, down=ugfx.JOY_DOWN, parent=self.container)
     
     def update(self, games):
         self.games = games
@@ -87,7 +87,7 @@ class ActionMenuView(CommonView):
     def __init__(self, parent):
         super().__init__(parent)
         self.title('Select Action')
-        self.action_list = ugfx.List(10, 40, self.window.width() - 20, self.window.height() - 40, up=ugfx.JOY_UP, down=ugfx.JOY_DOWN, parent=self.window)
+        self.action_list = ugfx.List(10, 40, self.container.width() - 20, self.container.height() - 40, up=ugfx.JOY_UP, down=ugfx.JOY_DOWN, parent=self.container)
         self.actions = ['Rock', 'Paper', 'Scissors', 'Leave']
         for action in self.actions:
             self.action_list.add_item(action)
@@ -160,8 +160,8 @@ class MessagePopupView(CommonView):
         if self.message_box != None:
             self.message_box.destroy()
         self.message_box = ugfx.Textbox(10, y,
-            self.window.width() - 20, self.window.height() - y - 20,
-            parent=self.window, style=self.popup_st)
+            self.container.width() - 20, self.container.height() - y - 20,
+            parent=self.container, style=self.popup_st)
         self.message_box.enabled(False)
         self.message_box.text(self.text)
 

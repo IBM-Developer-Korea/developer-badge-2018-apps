@@ -17,16 +17,16 @@ class RPSGame():
     default_font = 'NanumSquareRound_Regular16'
 
     def __init__(self):
-        self.window = None
+        self.container = None
 
         ugfx.input_init()
         ugfx.set_default_font(self.default_font)
 
     def title(self):
-        self.title_label = ugfx.Label(5, 5, 310, 40, text='RPS Game', parent=self.window)
+        self.title_label = ugfx.Label(5, 5, 310, 40, text='RPS Game', parent=self.container)
 
     def run(self):
-        self.window = ugfx.Container(0, 0, ugfx.width(), ugfx.height(), style=styles.ibm_st)
+        self.container = ugfx.Container(0, 0, ugfx.width(), ugfx.height(), style=styles.ibm_st)
         
         self.title()
 
@@ -43,13 +43,13 @@ class RPSGame():
         ugfx.input_attach(ugfx.BTN_B, self.select_b_cb)
 
         # Message Box                
-        self.message_label = ugfx.Label(0, self.window.height() - 88, self.window.width(),  88, '', parent=self.window, style=styles.wb, justification=ugfx.Label.LEFT)
+        self.message_label = ugfx.Label(0, self.container.height() - 88, self.container.width(),  88, '', parent=self.container, style=styles.wb, justification=ugfx.Label.LEFT)
 
         # Status Box
         self.create_status_box()
 
         # Show
-        self.window.show()
+        self.container.show()
 
         # Views
         self.game_list_view = GameListView(parent=self)
@@ -92,8 +92,8 @@ class RPSGame():
 
     def create_status_box(self, y=40):
         self.status_box = ugfx.Textbox(10, y,
-                self.window.width() - 20, self.window.height() - y - 20,
-                parent=self.window)
+                self.container.width() - 20, self.container.height() - y - 20,
+                parent=self.container)
         self.status_box.enabled(False)
         self.status_box.visible(0) # hide
 
