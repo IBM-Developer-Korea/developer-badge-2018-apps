@@ -38,6 +38,9 @@ class RPSChildView(RPSCommonView):
 
         # Attach
         self.manager.attach_view_cb(self)
+
+        # On select item callback
+        self.on_select_item_cb = lambda result: print(result)
         
         # Container
         if full_size:
@@ -50,6 +53,17 @@ class RPSChildView(RPSCommonView):
         super().__init__(width, height)
         if show:
             self.show()
+
+    def on_key_pressed(self, key):
+        print('pressed: {}', key)
+
+    def on_key_released(self, key):
+        print('released: {}', key)
+
+    def set_select_result_cb(self, cb):
+        if not callable(cb):
+            raise Exception("It's NOT callable!")
+        self.on_select_item_cb = cb
 
     def destroy(self):
         super().destroy()
@@ -72,7 +86,7 @@ class GameListView(RPSChildView):
         for game in games:
             self.game_list.add_item(game['title'])
 
-    def select_button_cb(self, key):
+    def on_key_released(self, key):
         if key == ugfx.BTN_A:
             idx = self.game_list.selected_index()
             if idx == 0: # Exit
@@ -105,7 +119,7 @@ class ActionMenuView(RPSChildView):
         for action in self.actions:
             self.action_list.add_item(action)
 
-    def select_button_cb(self, key):
+    def on_key_released(self, key):
         if key == ugfx.BTN_A:
             idx = self.action_list.selected_index()
             print('selected action: {}'.format(self.actions[idx]))
@@ -164,14 +178,6 @@ class MessagePopupView(RPSChildView):
         self.create_textbox()
         #self.message_box.visible(0) #hide
     
-    def answer_cb(self, result):
-        print(result)
-
-    def set_answer_cb(self, cb):
-        if not callable(cb):
-            raise Exception("Answer callback is not callable!!")
-        self.answer_cb = cb
-
     def create_textbox(self):
         y = 40
         if self.message_box != None:
@@ -217,14 +223,14 @@ class MessagePopupView(RPSChildView):
         ])
         self.create_textbox()
 
-    def select_button_cb(self, key):
+    def on_key_released(self, key):
         if key == ugfx.BTN_A:
             # OK
-            self.answer_cb(True)
+            self.on_select_item_cb(True)
 
         if key == ugfx.BTN_B:
             # Cancel
-            self.answer_cb(False)
+            self.on_select_item_cb(False)
 
         # Close
         self.close()

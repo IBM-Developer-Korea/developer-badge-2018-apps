@@ -51,14 +51,16 @@ class RPSViewManager(RPSCommonView):
         self.status_box.visible(0) # hide
 
     def open_status_box(self):
+        print('---open_status_box---')
         self.status_box.visible(1) # show
 
     def set_status_text(self, text):
-        print(text)
+        print('---set_status_text---:{}'.format(text))
         if self.status_box and self.status_box.visible():
             self.status_box.text(text)
 
     def close_status_box(self):
+        print('---close_status_box---')
         self.status_box.visible(0) # hide
     
     def destroy_status_box(self):
@@ -82,19 +84,22 @@ class RPSViewManager(RPSCommonView):
             self.appear_view(self.previous_view)
             self.previous_view = None
 
+    def select_key_cb(self, key, pressed):
+        # check if current view is assigned
+        if self.current_view == None:
+          print('current_view is None')
+          return
+        
+        if pressed:
+            self.current_view.on_key_pressed(key)
+        else:
+            self.current_view.on_key_released(key)
+
     def select_a_cb(self, pressed=True):
-        if not pressed:
-            # get current view
-            print(self.current_view)
-            if self.current_view != None:
-                self.current_view.select_button_cb(ugfx.BTN_A)
+        self.select_key_cb(ugfx.BTN_A, pressed)
 
     def select_b_cb(self, pressed=True):
-        if not pressed:
-            # get current view
-            print(self.current_view)
-            if self.current_view != None:
-                self.current_view.select_button_cb(ugfx.BTN_B)
+        self.select_key_cb(ugfx.BTN_B, pressed)
 
     def destroy(self):
         for id in self.views:
@@ -155,7 +160,11 @@ class RPSGame():
         self.message_popup_view.set_title('HELP')
         self.message_popup_view.set_text('AAAAAAA')
         self.message_popup_view.set_color(ugfx.BLACK, ugfx.RED)
+        self.message_popup_view.set_select_result_cb(self.on_select_result_cb)
         self.view_manager.appear_view(self.message_popup_view)
+
+    def on_select_result_cb(self, result):
+        self.view_manager.set_message_box('selected : {}'.format(result))
 
     ## RPS 
     def init_iotf(self):
@@ -199,7 +208,7 @@ class RPSGame():
     #
     def check_network(self):
         self.view_manager.open_status_box()
-        self.view_manager.set_status_text('Waiting for network')
+        self.view_manager.set_status_text('Wait for network')
         if not util.wait_network():
             self.view_manager.set_status_text('Cannot connect WiFi')
             raise Exception('Cannot connect WiFi')
@@ -259,8 +268,8 @@ class RPSGame():
 
         if cmd_type == 'games':
             self.game_list_view.update(cmd_value['games'])
-            self.view_manager.appear_view(self.game_list_view)
             self.view_manager.close_status_box()
+            self.view_manager.appear_view(self.game_list_view)
         elif cmd_type == 'join':
             self.view_manager.appear_view(self.action_menu_view)
         elif cmd_type == 'chat':
