@@ -3,35 +3,21 @@ import ugfx
 
 from home import styles
 
-class CommonView():
+class RPSCommonView():
     
     default_font = 'NanumSquareRound_Regular16'
 
-    def __init__(self, parent, show=False, full_size=False):
-        self.parent = parent
-
-        # Attach View
-        self.parent.attach_view_cb(self)
-        
-        #ugfx.input_init()
+    def __init__(self, width=ugfx.width(), height=ugfx.height()):
+        # Default font
         ugfx.set_default_font(self.default_font)
 
-        # create_container
-        if full_size:
-            width = self.parent.container.width()
-            height = self.parent.container.height()
-        else:
-            width = self.parent.container.width()
-            height = self.parent.container.height() - 88
-
+        # Container
         self.container = ugfx.Container(0, 0, width, height, style=styles.ibm_st)
-        if show:
-            self.container.show()
         
         # Title Label
         self.title_label = ugfx.Label(5, 5, 310, 40, text='', parent=self.container)
 
-    def title(self, text=''):
+    def set_title(self, text=''):
         self.title_label.text(text)
     
     def show(self):
@@ -40,20 +26,40 @@ class CommonView():
     def hide(self):
         self.container.hide()
 
-    def close(self):
-        if self.parent.previous_view != None:
-            self.parent.appear_view(self.parent.previous_view)
-        self.parent.previous_view = None
-    
-    def select_button_cb(self, key=None):
-        print('on selected')
+    def destroy(self):
+        self.container.destroy()
+        self.title_label.destroy()
 
-class GameListView(CommonView):
+class RPSChildView(RPSCommonView):
+
+    def __init__(self, manager, show=False, full_size=False):
+        # Set view manager
+        self.manager = manager
+
+        # Attach
+        self.manager.attach_view_cb(self)
+        
+        # Container
+        if full_size:
+            width = self.manager.container.width()
+            height = self.manager.container.height()
+        else:
+            width = self.manager.container.width()
+            height = self.manager.container.height() - 88
+
+        super().__init__(width, height)
+        if show:
+            self.show()
+
+    def destroy(self):
+        super().destroy()
+
+class GameListView(RPSChildView):
 
     # Entry
-    def __init__(self, parent):
-        super().__init__(parent)
-        self.title('Select Game')
+    def __init__(self, manager):
+        super().__init__(manager)
+        self.set_title('Select Game')
         self.game_list = ugfx.List(10, 40, self.container.width() - 20, self.container.height() - 40, up=ugfx.JOY_UP, down=ugfx.JOY_DOWN, parent=self.container)
     
     def update(self, games):
@@ -61,32 +67,39 @@ class GameListView(CommonView):
         for _ in range(self.game_list.count()):
             self.game_list.remove_item(0)
         
-        self.game_list.add_item('>TEST<')
+        self.game_list.add_item('### EXIT ###')
+        self.game_list.add_item('### TEST ###')
         for game in games:
             self.game_list.add_item(game['title'])
 
     def select_button_cb(self, key):
         if key == ugfx.BTN_A:
             idx = self.game_list.selected_index()
-            # Testing
-            if idx == 0:
-                self.parent.test()
+            if idx == 0: # Exit
+                self.manager.parent.exit()
                 return
-
+            elif idx == 1: # Test
+                self.manager.parent.test()
+                return
+            
             # Select Game
-            game_id = self.games[idx]['id']
+            game_id = self.games[idx - 2]['id']
             print('selected gid: {}'.format(game_id))
-            self.parent.join_game(game_id)
+            self.manager.parent.join_game(game_id)
         elif key == ugfx.BTN_B:
             # Refresh
-            self.parent.list_games()
+            self.manager.parent.list_games()
 
-class ActionMenuView(CommonView):
+    def destroy(self):
+        self.game_list.destroy()
+        super().destroy()
+
+class ActionMenuView(RPSChildView):
 
     # Entry
-    def __init__(self, parent):
-        super().__init__(parent)
-        self.title('Select Action')
+    def __init__(self, manager):
+        super().__init__(manager)
+        self.set_title('Select Action')
         self.action_list = ugfx.List(10, 40, self.container.width() - 20, self.container.height() - 40, up=ugfx.JOY_UP, down=ugfx.JOY_DOWN, parent=self.container)
         self.actions = ['Rock', 'Paper', 'Scissors', 'Leave']
         for action in self.actions:
@@ -98,17 +111,21 @@ class ActionMenuView(CommonView):
             print('selected action: {}'.format(self.actions[idx]))
             # Leave Game
             if idx == 3:
-                self.parent.leave_game()
+                self.manager.parent.leave_game()
                 return
             
             value = ['rock', 'paper', 'scissors']
-            self.parent.submit_option(value[idx])
+            self.manager.parent.submit_option(value[idx])
 
-class MessagePopupView(CommonView):
+    def destroy(self):
+        self.action_list.destroy()
+        super().destroy()
+
+class MessagePopupView(RPSChildView):
 
     # Entry
-    def __init__(self, parent, fg_color=ugfx.GREY, bg_color=ugfx.IBMCoolGrey10):
-        super().__init__(parent, full_size=True)
+    def __init__(self, manager, fg_color=ugfx.GREY, bg_color=ugfx.IBMCoolGrey10):
+        super().__init__(manager, full_size=True)
 
         # 
         self.fg_color = fg_color
@@ -140,7 +157,7 @@ class MessagePopupView(CommonView):
 
         self.popup_st = popup_st
 
-        self.title('Message Popup')
+        self.set_title('Message Popup')
 
         self.message_box = None
         self.text = ''
@@ -164,9 +181,6 @@ class MessagePopupView(CommonView):
             parent=self.container, style=self.popup_st)
         self.message_box.enabled(False)
         self.message_box.text(self.text)
-
-    def set_title(self, title):
-        self.title(title)
 
     def set_text(self, text=''):
         self.text = text
@@ -214,4 +228,10 @@ class MessagePopupView(CommonView):
 
         # Close
         self.close()
-        
+    
+    def close(self):
+        self.manager.close_view(self)
+
+    def destroy(self):
+        self.message_box.destroy()
+        super().destroy()
