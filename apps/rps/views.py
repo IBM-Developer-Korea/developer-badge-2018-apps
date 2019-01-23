@@ -87,7 +87,7 @@ class GameListView(RPSChildView):
         self.game_list.add_item('### EXIT ###')
         self.game_list.add_item('### TEST ###')
         for game in games:
-            self.game_list.add_item(game['title'])
+            self.game_list.add_item('[{0}] {1}'.format(game['status'], game['title']))
 
     def on_key_released(self, key):
         if key == ugfx.BTN_A:
