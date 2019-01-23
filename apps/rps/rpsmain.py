@@ -35,6 +35,9 @@ class RPSViewManager(RPSCommonView):
         # Status box
         self.create_status_box()
 
+        # Message Popup
+        self.message_popup_view = MessagePopupView(manager=self)
+
         # TODO: Splash screen
         #
     
@@ -108,6 +111,16 @@ class RPSViewManager(RPSCommonView):
         self.status_box.destroy()
         super.destroy()
 
+    def openMessagePopup(self, title='', message='', fg_color=ugfx.GREY, bg_color=ugfx.IBMCoolGrey10):
+        self.message_popup_view.set_title(title)
+        self.message_popup_view.set_text(message)
+        self.message_popup_view.set_color(fg_color, bg_color)
+        self.appear_view(self.message_popup_view)
+        return self.message_popup_view
+
+    def closeDialogPopup(self):
+        print('close!')
+
 class RPSGame():
     
     EVENT_TOPIC_RPS = b'iot-2/evt/rps/fmt/json'
@@ -133,7 +146,6 @@ class RPSGame():
         # Create views and register to the view manager
         self.game_list_view = GameListView(manager=self.view_manager)
         self.action_menu_view = ActionMenuView(manager=self.view_manager)
-        self.message_popup_view = MessagePopupView(manager=self.view_manager)
         
         # Initialize IoT
         try:
@@ -142,10 +154,7 @@ class RPSGame():
             print(e)
             print(e.args)
             msg = e.args[0]
-            self.message_popup_view.set_title('Error')
-            self.message_popup_view.set_text(msg)
-            self.message_popup_view.set_color(ugfx.BLACK, ugfx.RED)
-            self.view_manager.appear_view(self.message_popup_view)
+            self.view_manager.openMessagePopup('Error', msg, ugfx.BLACK, ugfx.RED)
             return
 
         # List Games
@@ -172,11 +181,8 @@ class RPSGame():
         self.view_manager.destroy()
 
     def test(self):
-        self.message_popup_view.set_title('HELP')
-        self.message_popup_view.set_text('AAAAAAA')
-        self.message_popup_view.set_color(ugfx.BLACK, ugfx.RED)
-        self.message_popup_view.set_select_result_cb(self.on_select_result_cb)
-        self.view_manager.appear_view(self.message_popup_view)
+        popup = self.view_manager.openMessagePopup('HELP', 'AAAAAAA', ugfx.BLACK, ugfx.RED)
+        popup.set_select_result_cb(self.on_select_result_cb)
 
     def on_select_result_cb(self, result):
         self.view_manager.set_message_box('selected : {}'.format(result))
