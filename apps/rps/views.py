@@ -61,8 +61,8 @@ class RPSChildView(RPSCommonView):
         print('released: {}'.format(key))
 
     def init_select_item_cb(self):
-        self.on_select_item_cb = lambda result: print(result)
-
+        self.on_select_item_cb = lambda result: result
+    
     def set_select_result_cb(self, cb):
         if not callable(cb):
             raise Exception('It is NOT callable!')
