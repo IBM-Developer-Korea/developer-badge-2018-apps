@@ -288,7 +288,7 @@ class RPSGame():
 
         # show error
         if cmd_status == 'error':
-            self.show_message('[error]{}'.format(cmd_text))
+            self.show_message('[error] {}'.format(cmd_text))
             return
         
         # games
@@ -304,7 +304,7 @@ class RPSGame():
               print(cmd_value)
 
         if cmd_text != None:
-            self.show_message('[{0}]{1}'.format(cmd_type, cmd_text))
+            self.show_message(cmd_text)
 
         if cmd_type == 'games':
             self.game_list_view.update(cmd_value['games'])
@@ -313,14 +313,9 @@ class RPSGame():
         elif cmd_type == 'join':
             self.action_menu_view.set_title(self.gtitle)
             self.view_manager.appear_view(self.action_menu_view)
-        elif cmd_type == 'chat':
-            # show chatting message
-            print('{}'.format(cmd_value['text']))
         elif cmd_type == 'submit':
-            # Submit
-            print('{}'.format(cmd_value['text']))
+            pass 
         elif cmd_type == 'leave':
-            print('{}'.format(cmd_value['text']))
             self.view_manager.appear_view(self.game_list_view)
         else:
             print('Unknown type ({})'.format(cmd_type))
