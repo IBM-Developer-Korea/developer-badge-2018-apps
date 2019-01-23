@@ -2,7 +2,7 @@ import ujson as json
 import ugfx
 import util
 import network
-import time
+import utime as time
 import urequests
 import umqtt.simple as simple
 
@@ -173,7 +173,7 @@ class RPSGame():
         #util.run('home')
         util.reboot()
 
-    def message_cb(self, msg):
+    def show_message(self, msg):
         print(msg)
         self.view_manager.set_message_box(msg)
 
@@ -203,7 +203,7 @@ class RPSGame():
 
         orgId = iotfcfg.orgId
         deviceType = iotfcfg.deviceType
-        deviceId = iotfcfg.deviceId if  hasattr(iotfcfg, 'deviceId') else mac_addr
+        deviceId = iotfcfg.deviceId if hasattr(iotfcfg, 'deviceId') else mac_addr
         user = 'use-token-auth'
         authToken = iotfcfg.authToken
 
@@ -211,8 +211,8 @@ class RPSGame():
         broker = orgId + '.messaging.internetofthings.ibmcloud.com'
 
         # Check for device registration
-        url = 'https://hongjs-nodered.mybluemix.net/api/badge2018/register'
-        deviceInfo = {
+        url = 'https://hongjs-nodered.mybluemix.net/api/badge2018/type/{}/register'.format(deviceType)
+        payload = {
             'deviceId': deviceId,
             'authToken': authToken,
             'deviceInfo': {},
@@ -221,7 +221,7 @@ class RPSGame():
             'metadata': {}
         }
         headers = {'token':'helloiot'}
-        r = urequests.post(url, json=deviceInfo, headers=headers)
+        r = urequests.post(url, json=payload, headers=headers)
         if r.status_code == 201:
           print('OK')
         elif r.status_code == 409:
@@ -288,26 +288,23 @@ class RPSGame():
 
         # show error
         if cmd_status == 'error':
-            self.message_cb('[error]{}'.format(cmd_text))
+            self.show_message('[error]{}'.format(cmd_text))
             return
         
         # games
         if cmd_type == 'judge':
           if 'result' in cmd_value:
               result = cmd_value['result']
-              self.message_popup_view.set_title('Result')
-              self.message_popup_view.set_text(cmd_text)
               if result == 'won':
-                self.message_popup_view.set_color(ugfx.WHITE, ugfx.BLUE)
+                self.view_manager.openMessagePopup('Result', cmd_text, ugfx.WHITE, ugfx.BLUE)
               else:
-                self.message_popup_view.set_color(ugfx.BLACK, ugfx.RED)
-              self.view_manager.appear_view(self.message_popup_view)
+                self.view_manager.openMessagePopup('Result', cmd_text, ugfx.BLACK, ugfx.RED)
               return
           else:
-              self.message_popup_view.close()
+              print(cmd_value)
 
         if cmd_text != None:
-            self.message_cb('[{0}]{1}'.format(cmd_type, cmd_text))
+            self.show_message('[{0}]{1}'.format(cmd_type, cmd_text))
 
         if cmd_type == 'games':
             self.game_list_view.update(cmd_value['games'])
