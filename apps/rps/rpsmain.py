@@ -223,6 +223,7 @@ class RPSGame():
         else:
           print(r.text)
           raise Exception(r.text)
+        r.close()
 
         self.deviceId = deviceId
 
