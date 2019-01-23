@@ -40,7 +40,7 @@ class RPSChildView(RPSCommonView):
         self.manager.attach_view_cb(self)
 
         # On select item callback
-        self.on_select_item_cb = lambda result: print(result)
+        self.init_select_item_cb()
         
         # Container
         if full_size:
@@ -55,10 +55,13 @@ class RPSChildView(RPSCommonView):
             self.show()
 
     def on_key_pressed(self, key):
-        print('pressed: {}', key)
+        print('pressed: {}'.format(key))
 
     def on_key_released(self, key):
-        print('released: {}', key)
+        print('released: {}'.format(key))
+
+    def init_select_item_cb(self):
+        self.on_select_item_cb = lambda result: print(result)
 
     def set_select_result_cb(self, cb):
         if not callable(cb):
@@ -97,9 +100,9 @@ class GameListView(RPSChildView):
                 return
             
             # Select Game
-            game_id = self.games[idx - 2]['id']
-            print('selected gid: {}'.format(game_id))
-            self.manager.parent.join_game(game_id)
+            game = self.games[idx - 2]
+            print('selected gid: {}'.format(game['id']))
+            self.manager.parent.join_game(game)
         elif key == ugfx.BTN_B:
             # Refresh
             self.manager.parent.list_games()
@@ -236,6 +239,7 @@ class MessagePopupView(RPSChildView):
         self.close()
     
     def close(self):
+        self.init_select_item_cb()
         self.manager.close_view(self)
 
     def destroy(self):

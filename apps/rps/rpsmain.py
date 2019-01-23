@@ -264,9 +264,10 @@ class RPSGame():
         cmd = {'type':'games','value':{'username':self.username}}
         self.mqtt.publish(self.EVENT_TOPIC_RPS, json.dumps(cmd))
 
-    def join_game(self, gid):
-        self.gid = gid
-        cmd = {'type':'join','value':{'gid':gid,'username':self.username}}
+    def join_game(self, game):
+        self.gid = game['id']
+        self.gtitle = game['title']
+        cmd = {'type':'join','value':{'gid':self.gid,'username':self.username}}
         self.mqtt.publish(self.EVENT_TOPIC_RPS, json.dumps(cmd))
     
     def submit_option(self, value):
@@ -313,6 +314,7 @@ class RPSGame():
             self.view_manager.close_status_box()
             self.view_manager.appear_view(self.game_list_view)
         elif cmd_type == 'join':
+            self.action_menu_view.set_title(self.gtitle)
             self.view_manager.appear_view(self.action_menu_view)
         elif cmd_type == 'chat':
             # show chatting message
