@@ -1,5 +1,5 @@
-orgID = "ua3ev8"
+orgId = "ua3ev8"
 deviceType = "badge2018"
-#deviceID =
+#deviceId =
 user = "use-token-auth"
 authToken = 'helloiot'

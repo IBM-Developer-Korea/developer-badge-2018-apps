@@ -1,7 +1,7 @@
+from rps.rpsmain import RPSGame
+rpsgame = RPSGame()
+
 def main():
-    from rps.rpsmain import RPSGame
+    global rpsgame
 
-    global app
-
-    app = RPSGame()
-    app.run()
+    rpsgame.run()

@@ -3,6 +3,7 @@ import ugfx
 import util
 import network
 import time
+import urequests
 import umqtt.simple as simple
 
 from rps import iotf as iotfcfg
@@ -109,12 +110,16 @@ class RPSViewManager(RPSCommonView):
 
 class RPSGame():
     
-    EVENT_TOPIC_RPS = b"iot-2/evt/rps/fmt/json"
-    COMMAND_TOPIC_RPS = b"iot-2/cmd/rps/fmt/json"
+    EVENT_TOPIC_RPS = b'iot-2/evt/rps/fmt/json'
+    COMMAND_TOPIC_RPS = b'iot-2/cmd/rps/fmt/json'
 
     default_font = 'NanumSquareRound_Regular16'
 
     def __init__(self):
+        # initialize ugfx
+        ugfx.init()
+
+        # Create RPS View manager
         self.view_manager = RPSViewManager(self)
 
     def run(self):
@@ -131,7 +136,17 @@ class RPSGame():
         self.message_popup_view = MessagePopupView(manager=self.view_manager)
         
         # Initialize IoT
-        self.init_iotf()
+        try:
+          self.init_iotf()
+        except Exception as e:
+            print(e)
+            print(e.args)
+            msg = e.args[0]
+            self.message_popup_view.set_title('Error')
+            self.message_popup_view.set_text(msg)
+            self.message_popup_view.set_color(ugfx.BLACK, ugfx.RED)
+            self.view_manager.appear_view(self.message_popup_view)
+            return
 
         # List Games
         self.list_games()
@@ -139,10 +154,10 @@ class RPSGame():
         try:
             while True:
                 self.mqtt.check_msg()
-                time.sleep_ms(1000)
+                time.sleep_ms(500)
         finally:
             self.mqtt.disconnect()
-            print("Disconnected")
+            print('Disconnected')
 
     def exit(self):
         #self.destroy()
@@ -180,16 +195,36 @@ class RPSGame():
         sta_if = network.WLAN(network.STA_IF)
         mac_addr = ''.join('{:02X}'.format(c) for c in sta_if.config('mac'))
 
-        orgID = iotfcfg.orgID
+        orgId = iotfcfg.orgId
         deviceType = iotfcfg.deviceType
-        deviceID = iotfcfg.deviceID if  hasattr(iotfcfg, 'deviceID') else mac_addr
+        deviceId = iotfcfg.deviceId if  hasattr(iotfcfg, 'deviceId') else mac_addr
         user = 'use-token-auth'
         authToken = iotfcfg.authToken
 
-        clientID = "d:" + orgID + ":" + deviceType + ":" + deviceID
-        broker = orgID + ".messaging.internetofthings.ibmcloud.com"
+        clientID = 'd:' + orgId + ':' + deviceType + ':' + deviceId
+        broker = orgId + '.messaging.internetofthings.ibmcloud.com'
 
-        self.deviceID = deviceID
+        # Check for device registration
+        url = 'https://hongjs-nodered.mybluemix.net/api/badge2018/register'
+        deviceInfo = {
+            'deviceId': deviceId,
+            'authToken': authToken,
+            'deviceInfo': {},
+            'groups': [],
+            'location': {},
+            'metadata': {}
+        }
+        headers = {'token':'helloiot'}
+        r = urequests.post(url, json=deviceInfo, headers=headers)
+        if r.status_code == 201:
+          print('OK')
+        elif r.status_code == 409:
+          print('Already Exists')
+        else:
+          print(r.text)
+          raise Exception(r.text)
+
+        self.deviceId = deviceId
 
         self.mqtt = simple.MQTTClient(clientID, broker, user=user, password=authToken, ssl=True)
         self.mqtt.set_callback(self.sub_cb)
@@ -219,20 +254,20 @@ class RPSGame():
     def list_games(self):
         self.view_manager.open_status_box()
         self.view_manager.set_status_text('Wait for list...')
-        cmd = {"type":"games","value":{"username":self.username}}
+        cmd = {'type':'games','value':{'username':self.username}}
         self.mqtt.publish(self.EVENT_TOPIC_RPS, json.dumps(cmd))
 
     def join_game(self, gid):
         self.gid = gid
-        cmd = {"type":"join","value":{"gid":gid,"username":self.username}}
+        cmd = {'type':'join','value':{'gid':gid,'username':self.username}}
         self.mqtt.publish(self.EVENT_TOPIC_RPS, json.dumps(cmd))
     
     def submit_option(self, value):
-        cmd = {"type":"submit","value":{"submit":value, "gid":self.gid,"username":self.username}}
+        cmd = {'type':'submit','value':{'submit':value, 'gid':self.gid,'username':self.username}}
         self.mqtt.publish(self.EVENT_TOPIC_RPS, json.dumps(cmd))
     
     def leave_game(self):
-        cmd = {"type":"leave","value":{"gid":self.gid,"username":self.username}}
+        cmd = {'type':'leave','value':{'gid':self.gid,'username':self.username}}
         self.mqtt.publish(self.EVENT_TOPIC_RPS, json.dumps(cmd))
 
     # RPS Command Callback

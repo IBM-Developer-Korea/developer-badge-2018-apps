@@ -62,7 +62,7 @@ class RPSChildView(RPSCommonView):
 
     def set_select_result_cb(self, cb):
         if not callable(cb):
-            raise Exception("It's NOT callable!")
+            raise Exception('It is NOT callable!')
         self.on_select_item_cb = cb
 
     def destroy(self):
