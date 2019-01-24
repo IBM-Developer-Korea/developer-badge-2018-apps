@@ -152,7 +152,6 @@ class RPSGame():
           self.init_iotf()
         except Exception as e:
             print(e)
-            print(e.args)
             msg = e.args[0]
             self.view_manager.openMessagePopup('Error', msg, ugfx.BLACK, ugfx.RED)
             return
