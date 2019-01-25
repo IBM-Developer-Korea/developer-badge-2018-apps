@@ -114,21 +114,33 @@ Ctrl-E 키를 누르면 일반 모드에서 붙여넣기 모드로 전환되며,
 
 사용자는 IoT 뱃지의 방향키를 움직여 메뉴를 선택하고 `A` 버튼을 눌러 선택한 메뉴를 실행할 수 있습니다. 초기 메뉴에서 `Apps` 메뉴에서 애플리케이션 리스트를 확인합니다. 그리고, `Network Config` 애플리케이션을 선택 후 실행합니다.
 
+![](img/netconfig-1.jpeg)
+
 `Network config`에서 `WiFi`를 선택하면 현재 주위의 WiFi SSID 목록을 표시합니다. 이 중 자신의 컴퓨터에 연결 가능한 WiFi 공유기의 SSID를 선택합니다.
 
-해당 공유기의 WiFi 비밀번호를 입력 후 `엔터문자`를 선택합니다.
+![](img/netconfig-2.jpeg)
+
+해당 공유기의 WiFi 비밀번호를 입력 후 `↵`를 선택합니다.
+
+![](img/netconfig-3.jpeg)
 
 정상적으로 연결되면 `Network configuration Saved`라는 메시지와 함께 IoT 뱃지가 재부팅합니다.
+
+![](img/netconfig-4.jpeg)
 
 ### WebREPL 활성화
 
 IoT 뱃지에서 WebREPL을 사용하려면 WiFi 네트워크 설정을 했던 `Network Config` 애플리케이션을 실행해야 합니다. `Network Config` 앱에서 `B` 버튼을 클릭하면 현재 IoT 뱃지의 IP 정보가 표기됩니다. 이 정보를 잘 기억했다가 WebREPL의 접속 IP로 사용합니다.
 
+![](img/netconfig-5.jpeg)
+
 방향키를 눌러 `Webrepl` 메뉴로 진입하면 WiFi 비밀번호 설정과 유사한 화면이 나타납니다.
+
+![](img/netconfig-6.jpeg)
 
 이는 WebREPL의 경우 IP를 알면 누구나 IoT 뱃지에 접속할 수 있으므로 이에 대한 기초적인 비밀번호를 설정하는 것입니다. 임의의 값을 입력 후 WebREPL 연결 시 입력하도록 합니다.
 
-그리고, `엔터문자`를 선택하면, `Webrepl password saved.` 란 메시지와 함께 IoT 뱃지가 재부팅됩니다.
+그리고, `↵`를 선택하면, `Webrepl password saved.` 란 메시지와 함께 IoT 뱃지가 재부팅됩니다.
 
 ### WebREPL 코드 설치
 
