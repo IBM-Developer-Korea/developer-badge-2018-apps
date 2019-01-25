@@ -2,6 +2,8 @@
 IoT뱃지를 본격적으로 사용해보기 전에 최신 ROM을 올려봅니다.
 드라이버를 설치한 후, Flash Download Tool을 통해 IoT뱃지에 ROM을 설치합니다.
 
+만약, Python을 이용한 ESPTool CLI를 이용하는 경우 [epstool.md](esptool.md)를 참고하시기 바랍니다.
+
 ## 소요시간
 15분 이내
 
