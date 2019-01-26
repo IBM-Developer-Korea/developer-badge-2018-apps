@@ -18,54 +18,19 @@ dir_y=1;
 dir_x=0;
 orient=270
 
-def headright(pressed):
+def head(pressed, x, y, o):
     global dir_x
     global dir_y
     global orient
     if(pressed):
-        print('right')
-        dir_x = 1
-        dir_y = 0
-        orient = 270
-
-def headleft(pressed):
-    global dir_x
-    global dir_y
-    global orient
-    if(pressed):
-        print('left')
-        dir_x = -1
-        dir_y = 0
-        orient = 90
-
-def headdown(pressed):
-    global dir_x
-    global dir_y
-    global orient
-    if(pressed):
-        print('down')
-        dir_y = 1
-        dir_x = 0
-        orient = 180
-
-def headup(pressed):
-    global dir_x
-    global dir_y
-    global orient
-    if(pressed):
-        print('up')
-        dir_y = -1
-        dir_x = 0
-        orient = 0
+        dir_x = x
+        dir_y = y
+        orient = o
 
 def one_round():
     global dir_x
     global dir_y
     global orient
-#    ugfx.input_attach(ugfx.JOY_UP, lambda pressed: headup(pressed))
-#    ugfx.input_attach(ugfx.JOY_DOWN, lambda pressed: headdown(pressed))
-#    ugfx.input_attach(ugfx.JOY_LEFT, lambda pressed: headleft(pressed))
-#    ugfx.input_attach(ugfx.JOY_RIGHT, lambda pressed: headright(pressed))
     grid_size = 8;
     body_colour = ugfx.BLACK
     back_colour = ugfx.WHITE
@@ -143,10 +108,10 @@ def one_round():
     return score
 
 ugfx.input_init()
-ugfx.input_attach(ugfx.JOY_UP, lambda pressed: headup(pressed))
-ugfx.input_attach(ugfx.JOY_DOWN, lambda pressed: headdown(pressed))
-ugfx.input_attach(ugfx.JOY_LEFT, lambda pressed: headleft(pressed))
-ugfx.input_attach(ugfx.JOY_RIGHT, lambda pressed: headright(pressed))
+ugfx.input_attach(ugfx.JOY_UP, lambda pressed: head(pressed, 0, -1, 0))
+ugfx.input_attach(ugfx.JOY_DOWN, lambda pressed: head(pressed, 0, 1, 180))
+ugfx.input_attach(ugfx.JOY_LEFT, lambda pressed: head(pressed, -1, 0, 90))
+ugfx.input_attach(ugfx.JOY_RIGHT, lambda pressed: head(pressed, 1, 0, 270))
 
 next_game = False
 
