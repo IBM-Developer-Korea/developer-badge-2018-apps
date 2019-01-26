@@ -6,13 +6,11 @@
 ### Built-in: yes
 ### Ported by Sebastius
 
-import badge
 import ugfx
 import time
 import urandom
 import math
 
-badge.init()
 ugfx.init()
 
 dir_y=1;
@@ -117,7 +115,6 @@ def one_round():
 	#   disp_body_straight(body_x[i],body_y[i],orient,body_colour)
 
     while keepgoing:
-        ugfx.flush()
         body_x.append(body_x[-1]+dir_x)
         body_y.append(body_y[-1]+dir_y)
 
