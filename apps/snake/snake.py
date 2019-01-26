@@ -32,10 +32,10 @@ def one_round():
     global dir_y
     global orient
     grid_size = 8;
-    body_colour = ugfx.BLACK
-    back_colour = ugfx.WHITE
-    food_colour = ugfx.BLACK
-    wall_colour = ugfx.BLACK
+    body_colour = ugfx.RED
+    back_colour = ugfx.BLACK
+    food_colour = ugfx.YELLOW
+    wall_colour = ugfx.BLUE
     score = 0;
     edge_x = math.floor(ugfx.width()/grid_size)-2;
     edge_y = math.floor(ugfx.height()/grid_size)-2;
@@ -62,16 +62,16 @@ def one_round():
     body_x = [12,13,14,15,16]
     body_y = [2,2,2,2,2]
 
-    ugfx.clear(ugfx.WHITE)
-    ugfx.area(0,0,grid_size*(edge_x+1),grid_size,ugfx.BLACK)
-    ugfx.area(0,0,grid_size,grid_size*(edge_y+1),ugfx.BLACK)
-    ugfx.area(grid_size*(edge_x+1),0,grid_size,grid_size*(edge_y+1),ugfx.BLACK)
-    ugfx.area(0,grid_size*(edge_y+1),grid_size*(edge_x+2),grid_size,ugfx.BLACK)
+    ugfx.clear(back_colour)
+    ugfx.area(0,0,grid_size*(edge_x+1),grid_size,wall_colour)
+    ugfx.area(0,0,grid_size,grid_size*(edge_y+1),wall_colour)
+    ugfx.area(grid_size*(edge_x+1),0,grid_size,grid_size*(edge_y+1),wall_colour)
+    ugfx.area(0,grid_size*(edge_y+1),grid_size*(edge_x+2),grid_size,wall_colour)
 
     keepgoing = 1;
 
     food = [20,20]
-    disp_square(food[0],food[1],ugfx.BLACK)
+    disp_square(food[0],food[1],food_colour)
 
     dir_x = 1
     dir_y = 0
@@ -91,11 +91,11 @@ def one_round():
         if not((body_x[-1] == food[0]) and (body_y[-1] == food[1])):
             x_del = body_x.pop(0)
             y_del = body_y.pop(0)
-            disp_eaten_food(x_del,y_del,ugfx.WHITE)
+            disp_eaten_food(x_del,y_del,back_colour)
         else:
-            disp_eaten_food(food[0],food[1],ugfx.BLACK)
+            disp_eaten_food(food[0],food[1],body_colour)
             food = randn_square()
-            disp_square(food[0],food[1],ugfx.BLACK)
+            disp_square(food[0],food[1],food_colour)
             score = score + 1
 
         disp_body_straight(body_x[-1],body_y[-1],orient,body_colour)
