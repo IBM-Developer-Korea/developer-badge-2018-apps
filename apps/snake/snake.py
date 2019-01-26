@@ -10,6 +10,7 @@ import ugfx
 import time
 import urandom
 import math
+import util
 
 ugfx.init()
 
@@ -147,6 +148,17 @@ ugfx.input_attach(ugfx.JOY_DOWN, lambda pressed: headdown(pressed))
 ugfx.input_attach(ugfx.JOY_LEFT, lambda pressed: headleft(pressed))
 ugfx.input_attach(ugfx.JOY_RIGHT, lambda pressed: headright(pressed))
 
+next_game = False
+
+def cb_next(pressed):
+    global next_game
+    if pressed:
+        next_game = True
+
+
+ugfx.input_attach(ugfx.BTN_A, cb_next)
+ugfx.input_attach(ugfx.BTN_B, util.reboot)
+
 playing = 1
 while playing:
     score = one_round()
@@ -154,5 +166,7 @@ while playing:
     ugfx.text(30, 30, "GAME OVER Score: %d" % (score), 0xFFFF)
     ugfx.text(30, 60, "Press A to play again", 0xFFFF)
     ugfx.text(30, 90, "Press MENU to quit" , 0xFFFF)
-    while True:
+
+    next_game = False
+    while not next_game:
         time.sleep_ms(100)
