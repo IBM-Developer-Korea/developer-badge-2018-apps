@@ -37,7 +37,7 @@ Windows 10의 경우, 작업 표시줄에 돋보기 버튼을 눌러 "장치 관
 
 ### Putty Serial 정보 입력
 
-![](img/start%20putty%202.PNG)
+![](img/puttyserial.PNG)
 
 `Serial line`에 확인한 COM값을 입력해 포트를 설정합니다. `Speed`에는 115200을 입력해 baudrate를 설정합니다.
 하단의 `Open`을 클릭합니다.
