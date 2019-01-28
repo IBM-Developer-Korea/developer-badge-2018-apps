@@ -148,7 +148,7 @@ WebREPL은 다음 URL에서 다운로드 받아 놓습니다.
 
 * https://github.com/micropython/webrepl/archive/master.zip
 
-압축을 해재하면 `webrepl.html` 파일이 있는 것을 볼 수 있습니다. 이 파일을 Web Browser를 실행하여 열면 WebREPL 화면을 볼 수 있습니다.
+파일 압축을 해제하면 `webrepl.html` 파일이 있는 것을 볼 수 있습니다. 이 파일을 Web Browser를 실행하여 열면 WebREPL 화면을 볼 수 있습니다.
 
 ![](img/webrepl-1.png)
 
