@@ -12,7 +12,11 @@ IoT뱃지를 본격적으로 사용해보기 전에 최신 ROM을 올려봅니�
 아래 링크에서 자신의 운영체제에 맞는 CP210xUSB to UART Bridge VCP 드라이버를 다운로드 합니다.
 https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers
 ![](img/Driversetup1.PNG)
+
+
 다운로드한 폴더를 열어 인스톨러를 실행해 다운로드를 마칩니다.
+
+
 ![](img/Driversetup2.PNG)
 ![](img/Driversetup3.PNG)
 
