@@ -1,4 +1,4 @@
-# 미세먼지 센서 앱 만들기
+# 미세먼지 센서 사용해보기
 
 `REPL`은 Read-Eval-Print Loop의 약자로 일종의 명령을 입력하면 그 결과를 보여주는 일종의 Shell 같은 서비스를 말합니다. IBM IoT Badge에는 MicroPython이 포팅되어 있어 USB 케이블을 이용해 Serial 통신 프로그램으로 REPL에 연결 할 수 있습니다.
 
