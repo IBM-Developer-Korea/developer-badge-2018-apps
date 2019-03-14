@@ -131,58 +131,48 @@ LED 회로는 Open Drain 방식으로 동작합니다. 따라서, ILED 값이 LO
 
 ![badge dust port](img/dust-sch.jpg)
 
-``` cpp
-const int sharpLEDPin = 32;  // ESP32 digital pin 32 connect to sensor LED.
-const int sharpVoPin = 36;   // ESP32 analog pin 36 connect to sensor Vo.
+``` python
+sharpLEDPin = Pin(32, Pin.OUT)
+sharpVoPin = ADC(Pin(36))
 ```
 
-그 다음은 void setup() 함수에서 Serial 통신용 Baudrate을 115200으로 변경하고
+그 다음은 ESP32용 Analog Digital Converter의 입력을 3.9V까지 입력 받을 수 있도록 11dB attenuation을 설정해 줍니다.
 
-``` cpp
-Serial.begin(115200);
-```
-
-ESP32용 Analog Digital Converter의 입력을 3.9V까지 입력 받을 수 있도록 11dB attenuation을 설정해 줍니다.
-
-``` cpp
-analogSetPinAttenuation(sharpVoPin, ADC_11db);
+``` python
+sharpVoPin.atten(ADC.ATTN_11DB)
 ```
 
 ESP32는 ADC에 12비트를 사용하므로 최대 4095까지 검출됩니다. 따라서 이를 적용합니다.
 
-``` cpp
-Vo = Vo / 4095.0 * 5.0;
+``` python
+Vo = VoRaw / 4095.0 * 5.0;
 ```
 
 참고로, Vo 환산 시 3.3V이 아닌 5V를 기준으로 계산하는데 이는 이후 먼지 밀도 계산이 5V를 기준으로 되어 있기 때문에 이를 맞추기 위함입니다. 이렇게 얻어진 Vo 환산 값을 미세 먼지 밀도 변환식에 적용하여 최종 미세먼지 밀도 값을 얻게 됩니다.
 
 완성된 예제 코드는 아래 소스 코드를 참고하시기 바랍니다.
 
-* [아두이노 예제 코드](dust.ino)
+* [예제 코드](dust.py)
 
-### 마이크로 파이썬 예제 코드
+그런데, 이 예제 코드로 실행하면 센서 측정 값이 안정되지 않고 들쭉 날쭉한 결과가 출력되는 것을 볼 수 있습니다. 이를 오실로스코프로 확인을 해 보면 Arduino 때와 보다 시간이 지연되는 현상이 발생하는 것을 볼 수 있습니다. 
 
-앞서 작성한 아두이노 코드를 바탕으로 마이크로 파이썬으로 코드로 만들면 다음 예제 코드와 같습니다.
+![Sesnor signal](img/signal-upython.jpg)
 
-* [마이크로 파이썬 예제 코드](dust.py)
-
-그런데, 이 예제 코드로 실행하면 Arduino 프로그램으로 실행했을 때와 달리 센서 값이 안정되지 않고 들쭉 날쭉한 결과가 출력되는 것을 볼 수 있습니다.
-
-이를 오실로스코프로 확인을 해 보면 Arduino 때와 보다 시간이 지연되는 현상이 발생하는 것을 볼 수 있습니다. 
-
-**[Arduino]**
-![](img/signal-arduino.jpg)
-
-**[Micropython]**
-![](img/signal-upython.jpg)
-
-신호를 더 확인해 보면 마이크로 파이쎤 코드가 실행되는 시간과 Vo 값을 읽기전 280us를 대기 시간이 실제로는 400us로 측정되는 것을 볼 수 있으며 이 것이 원인이 됨을 알 수 있습니다.
+더 확인해 보면 마이크로 파이쎤 코드가 실행되는 시간과 Vo 값을 읽기전 280us를 대기 시간이 실제로는 400us로 측정되는 것을 볼 수 있으며 이것이 원인이 됨을 알 수 있습니다.
 
 결과적으로 마이크로 파이썬 특성상 마이크로초 단위 통제가 안되는 현상이라 어쩔 수 없지만, 약간의 트릭으로 지연 시간을 조정하여 일정한 값이 출력되도록 할 수 있습니다. 이는 다음 예제를 참고 하기 바랍니다.
 
-* [마이크로 파이썬 예제 코드 - 타이밍 수정본](dust_adjusted.py)
+* [예제 코드 - 타이밍 수정본](dust_adjusted.py)
 
-좀 더 명확한 방법은 Developer Day 2018 뱃지에 포팅된 마이크로 파이썬 펌웨어에 C언어로 구현된 미세먼지 센서 모듈을 추가하고 이를 python 코드에서 호출하는 방식입니다. 본 문서에서는 이 방법은 다루지 않으며 향후 펌웨어 업데이트에 맞춰 공개 할 예정입니다.
+그리고, GP2Y1014AU0F 센서의 특성으로 인해 고가의 센서에 비해서 안정된 값을 얻을 수 없는 것도 사실이다. 따라서, 영정 측정과 함께 이동 평균 값을 이용하여 노이즈를 제거한 값을 사용하면 보다 정확한 값을 얻을 수 있습니다. 이는 아래 링크의 정보를 참고 할 수 있습니다.
+
+* [샤프 미세먼지 센서는 쓰레기가 아니었다 !!! - 새다리 종합 기록실
+](https://m.blog.naver.com/twophase/221139319142)
+
+
+* [예제 코드 - 이동 평균 적용본](dust_average.py)
+
+그리고 Developer Day 2018 뱃지에 포팅된 마이크로 파이썬 펌웨어에 C언어로 구현된 미세먼지 센서 모듈을 추가하고 이를 python 코드에서 호출하여 타이밍을 안정화 하는 방법도 있는데 본 문서에서는 이 방법은 다루지 않으며 향후 펌웨어 업데이트에 맞춰 공개 할 예정입니다.
 
 
 ## 참고
@@ -192,7 +182,7 @@ Vo = Vo / 4095.0 * 5.0;
 * https://github.com/sharpsensoruser/sharp-sensor-demos/wiki/Application-Guide-for-Sharp-GP2Y1014AU0F-Dust-Sensor
 * https://github.com/sharpsensoruser/sharp-sensor-demos/blob/master/sharp_gp2y1014au0f_demo/sharp_gp2y1014au0f_demo.ino
 * https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/peripherals/adc.html
-
+* https://m.blog.naver.com/twophase/221139319142
 
 * http://www.sharp-world.com/products/device/lineup/data/pdf/datasheet/gp2y1010au_appl_e.pdf
 * http://www.sharp-world.com/products/device/lineup/data/pdf/datasheet/gp2y1010au_e.pdf
