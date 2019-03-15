@@ -15,7 +15,7 @@ class DustMain():
 
     # Config
     IS_PM2_5 = False
-    IS_AUTOSCALE = True
+    IS_AUTOSCALE = False
     REFRESH_RATE = 1000 # 200
 
     # Levels
@@ -26,6 +26,7 @@ class DustMain():
     # scale_factor
     scale_factor = 1 if IS_AUTOSCALE else 10
     p_scale = scale_factor
+    y_offset = 200 # 120
 
 
     # PM 10
@@ -64,9 +65,10 @@ class DustMain():
         ('BEST',       0, ugfx.HTML2COLOR(0x2b75c0)),
     ]
 
+    DENSITY_LEVELS = PM2_5_LEVELS if IS_PM2_5 else PM10_LEVELS
+
     def getDensityInfo(self, density):
-        levels = self.PM2_5_LEVELS if self.IS_PM2_5 else self.PM10_LEVELS
-        for lb, lv, color in levels:
+        for lb, lv, color in self.DENSITY_LEVELS:
             if density > lv:
                 #print('{}-{}-{}'.format(lb, lv, color))
                 return {
@@ -75,7 +77,7 @@ class DustMain():
                     'color': color
                 }
 
-        lb, lv, color = levels[0]
+        lb, lv, color = self.DENSITY_LEVELS[0]
         return {
             'label': lb,
             'level': lv,
@@ -84,77 +86,17 @@ class DustMain():
 
     def getLevelColor(self, density):
         return self.getDensityInfo(density)['color']
-    
-    # PM10 View
-    def select_up_cb(self, pressed=True):
-        if pressed:
-            self.IS_PM2_5 = False
-            print('View as PM10')
-            ugfx.clear(ugfx.WHITE)
-
-    # PM2.5 View
-    def select_down_cb(self, pressed=True):
-        if pressed:
-            self.IS_PM2_5 = True
-            print('View as PM2.5')
-            ugfx.clear(ugfx.WHITE)
-
-    # Decrease Voc
-    def select_left_cb(self, pressed=True):
-        if pressed:
-            self.dust_sensor.Voc = round(self.dust_sensor.Voc - 0.1, 3)
-            print(self.dust_sensor.Voc)
-            ugfx.clear(ugfx.WHITE)
-
-    # Increase Voc
-    def select_right_cb(self, pressed=True):
-        if pressed:
-            self.dust_sensor.Voc = round(self.dust_sensor.Voc + 0.1, 3)
-            print(self.dust_sensor.Voc)
-            ugfx.clear(ugfx.WHITE)
-
-    # Reset
-    def select_a_cb(self, pressed=True):
-        self.dust_sensor.K = 0.5
-        self.dust_sensor.Voc = 0.6
-        self.IS_PM2_5 = False
-
-    # Back to home
-    def select_b_cb(self, pressed=True):
-        # run('home')
-        run('dustapp')
-
-    def init_buttons(self):
-        # JOY Buttons Handler
-        ugfx.input_attach(ugfx.JOY_UP, self.select_up_cb)
-        ugfx.input_attach(ugfx.JOY_DOWN, self.select_down_cb)
-        ugfx.input_attach(ugfx.JOY_LEFT, self.select_left_cb)
-        ugfx.input_attach(ugfx.JOY_RIGHT, self.select_right_cb)
-
-        # A/B Button Handler
-        ugfx.input_attach(ugfx.BTN_A, self.select_a_cb)
-        ugfx.input_attach(ugfx.BTN_B, self.select_b_cb)
 
     def __init__(self):
         # initialize ugfx
         ugfx.init()
         ugfx.clear(ugfx.WHITE)
-        ugfx.input_init()
-
-        # Buttons
-        self.init_buttons()
 
         # Container
         width = ugfx.width()
         height = ugfx.height()
-        ind_height = 40
-        ind_pos = height - ind_height
+        self.container = ugfx.Container(0, 0, width, height, style=styles.ibm_st)
 
-        self.indicator = ugfx.Container(0, ind_pos, width, ind_height, style=styles.ibm_st)
-        self.container = ugfx.Container(0, 0, width, ind_pos, style=styles.ibm_st)
-
-        self.y_offset = ind_pos - 10
-        
         # Sensor
         self.dust_sensor = gp2y1014au.GP2Y1014AU(iled=32, vo=36, K=0.5, Voc=0.6)
 
@@ -165,11 +107,9 @@ class DustMain():
 
         # Show container
         self.container.show()
-        self.indicator.show()
 
         stime = time.ticks_ms()
 
-        Vos = self.Vos
         while True:
             Vo = self.dust_sensor.readVo(280, 40)
 
@@ -178,17 +118,14 @@ class DustMain():
             # EMA(t) = Value(t)*k + EMA(y) * (1-k)
             # k = 2 / (N+1)
             # k = 0.005 where N = 399
-            # self.Vos = Vo * 0.005 + self.Vos * 0.995
-            Vos = Vo * 0.005 + Vos * 0.995
+            self.Vos = Vo * 0.005 + self.Vos * 0.995
 
-            time.sleep_ms(10)
-            # time.sleep_ms(5)
+            #time.sleep_ms(10)
+            time.sleep_ms(5)
 
             if self.REFRESH_RATE < (time.ticks_ms() - stime):
                 stime = time.ticks_ms()
-                self.Vos = Vos
                 self.refresh_screen()
-                self.init_buttons()
     
     def y_scale(self, v):
         return int(v / self.scale_factor)
@@ -210,18 +147,20 @@ class DustMain():
                     ugfx.clear(ugfx.WHITE)
                 self.p_scale = self.scale_factor
 
+        # Clear
+        #ugfx.clear(ugfx.WHITE)
+
         # Indicator
+        ind_y = self.y_offset+10
         status = self.getDensityInfo(density)
-        #self.indicator.clear(status['color'])
-        self.indicator.area(0, 0, self.indicator.width(), self.indicator.height(), status['color'])
-        #self.indicator.text(0, 12, 'x1/{} {}mV {} ({}ug/m3)'.format(self.scale_factor, int(self.Vos * 1000.0), status['label'], '-' if density < 0 else density), ugfx.WHITE)
-        self.indicator.text(0, 12, '{} Voc:{} {}ug/m3 : {}'.format('PM2.5' if self.IS_PM2_5 else 'PM10', self.dust_sensor.Voc, '-' if density < 0 else density, status['label']), ugfx.WHITE)
+        ugfx.area(0, ind_y, 320, 240, status['color'])
+        ugfx.text(0, ind_y+6, '[1/{}] {}mV {} ({}ug/m3)'.format(self.scale_factor, int(self.Vos * 1000.0), status['label'], '-' if density < 0 else density), ugfx.WHITE)
 
         # draw
         py = self.y_offset
         px = 0
         for i, (v, d) in enumerate(self.volist):
-            x = int (i / self.X_RESOLUTION * self.container.width() )
+            x = int (i / self.X_RESOLUTION * 320 )
             y = self.y_offset - self.y_scale(v)
 
             # Color
@@ -230,17 +169,17 @@ class DustMain():
             # draw
             if i == self.idx+1:
                 # clear oldest
-                self.container.area(px, 0, x, self.y_offset, ugfx.WHITE)
+                ugfx.area(px, 0, x, self.y_offset, ugfx.WHITE)
             else:
                 # previous
-                #container.thickline(px, py, x, y, lvcolor, 5, True)
-                self.container.line(px, py, x, y, lvcolor)
+                #ugfx.thickline(px, py, x, y, lvcolor, 5, True)
+                ugfx.line(px, py, x, y, lvcolor)
             
             px = x
             py = y
 
         # baseline
-        self.container.line(0, self.y_offset, self.container.width(), self.y_offset, ugfx.BLACK)
+        ugfx.line(0, self.y_offset, 320, self.y_offset, ugfx.BLACK)
 
         # ruler
         y = 0
@@ -248,7 +187,7 @@ class DustMain():
 
         while y < maxy:
             sy = self.y_offset  - self.y_scale(y)
-            self.container.line(0, sy, 20 if y%500 == 0 else 10, sy, ugfx.BLACK)
+            ugfx.line(0, sy, 20 if y%500 == 0 else 10, sy, ugfx.BLACK)
             y += 100
 
         # increase

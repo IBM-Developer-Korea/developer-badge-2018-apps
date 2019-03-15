@@ -47,7 +47,9 @@ class GP2Y1014AU():
 
         return VoRaw
 
-    def computeDensity(self, Vo, Voc = 0.6):
+    def computeDensity(self, Vo, Voc = None):
+        if Voc == None:
+            Voc = self.Voc
         
         # Convert to Dust Density in units of ug/m3.
         dV = Vo - Voc
@@ -57,3 +59,12 @@ class GP2Y1014AU():
 
         return dV / self.K * 100.0
 
+    def increaseVoc(self, delta=0.1):
+        print('INC')
+        print(self.Voc)
+        self.Voc = self.Voc + float(delta)
+
+    def decreaseVoc(self, delta=0.1):
+        print('DEC')
+        print(self.Voc)
+        self.Voc = self.Voc - float(delta)
