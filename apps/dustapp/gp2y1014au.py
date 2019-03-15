@@ -58,13 +58,4 @@ class GP2Y1014AU():
             return -1.0
 
         return dV / self.K * 100.0
-
-    def increaseVoc(self, delta=0.1):
-        print('INC')
-        print(self.Voc)
-        self.Voc = self.Voc + float(delta)
-
-    def decreaseVoc(self, delta=0.1):
-        print('DEC')
-        print(self.Voc)
-        self.Voc = self.Voc - float(delta)
+        
