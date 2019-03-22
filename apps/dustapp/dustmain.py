@@ -7,18 +7,23 @@ import utime as time
 import urequests
 import ugfx
 
-from dustapp import gp2y1014au
-
 from home import styles
+
+try:
+    gp2y1014au = __import__('gp2y1014au')
+except ImportError:
+    gp2y1014au = __import__('gp2y1014au', ['dustapp'])
 
 class DustMain():
 
     # Config
-    IS_PM2_5 = True
+    IS_PM2_5 = False
     IS_AUTOSCALE = True
     REFRESH_RATE = 1000 # 200
 
-    SAMPLING_TIME = 220 # 280
+    AVG_NUM = 400
+    SAMPLING_TIME = 200 # 280
+    VOC = 0.0 # 0.6
 
     # Levels
     X_RESOLUTION = 40 # 320
@@ -89,37 +94,30 @@ class DustMain():
     # Increase sampling time
     def select_up_cb(self, pressed=True):
         if pressed:
-            self.SAMPLING_TIME = self.SAMPLING_TIME + 10
-            print(self.SAMPLING_TIME)
+            self.SAMPLING_TIME = self.SAMPLING_TIME + 20
 
     # Decrease sampling time
     def select_down_cb(self, pressed=True):
         if pressed:
-            self.SAMPLING_TIME = self.SAMPLING_TIME - 10
-            print(self.SAMPLING_TIME)
+            self.SAMPLING_TIME = self.SAMPLING_TIME - 20
 
     # Decrease Voc
     def select_left_cb(self, pressed=True):
         if pressed:
-            self.dust_sensor.Voc = round(self.dust_sensor.Voc - 0.1, 3)
-            print(self.dust_sensor.Voc)
+            self.VOC = round(self.VOC - 0.1, 3)
 
     # Increase Voc
     def select_right_cb(self, pressed=True):
         if pressed:
-            self.dust_sensor.Voc = round(self.dust_sensor.Voc + 0.1, 3)
-            print(self.dust_sensor.Voc)
+            self.VOC = round(self.VOC + 0.1, 3)
 
-    # Reset
     def select_a_cb(self, pressed=True):
-        self.dust_sensor.K = 0.5
-        self.dust_sensor.Voc = 0.6
-        self.IS_PM2_5 = False
+        self.VOC = 0.0 # 0.6
+        self.SAMPLING_TIME = 200 # 280
 
     # Back to home
     def select_b_cb(self, pressed=True):
-        # run('home')
-        run('dustapp')
+        run('home')
 
     def init_buttons(self):
         # JOY Buttons Handler
@@ -136,10 +134,9 @@ class DustMain():
         # initialize ugfx
         ugfx.init()
         ugfx.clear(ugfx.WHITE)
-        ugfx.input_init()
-
+        
         # Buttons
-        self.init_buttons()
+        ugfx.input_init()
 
         # Container
         width = ugfx.width()
@@ -153,9 +150,8 @@ class DustMain():
         self.y_offset = ind_pos - 10
         
         # Sensor
-        #self.dust_sensor = gp2y1014au.GP2Y1014AU(iled=32, vo=36, K=0.5, Voc=0.6)
-        self.dust_sensor = gp2y1014au.GP2Y1014AU(iled=32, vo=36, K=0.5, Voc=0.0)
-
+        self.dust_sensor = gp2y1014au.GP2Y1014AU(iled=32, vo=36, K=0.5, Voc=self.VOC)
+        
         # Smooth
         self.Vos = 0.1 # 0.8
 
@@ -171,7 +167,11 @@ class DustMain():
         sleep_time = 2000
         while True:
             #Vo = self.dust_sensor.readVo(280, 40)
-            Vo = self.dust_sensor.readVo(self.SAMPLING_TIME, 0)
+            VoRaw = self.dust_sensor.readVoRaw(self.SAMPLING_TIME, 0)
+
+            # Compute the output in Volts.
+            Vo = VoRaw / 4095.0 * 5.0
+            # Vo = self.dust_sensor.readVo(self.SAMPLING_TIME, 0)
 
             # Exponential Moving Average
             # https://www.investopedia.com/terms/e/ema.asp
@@ -180,12 +180,13 @@ class DustMain():
             # k = 0.005 where N = 399
             self.Vos = Vo * 0.005 + self.Vos * 0.995
 
+            # print('{}, {}'.format(VoRaw, self.Vos * 1000.0))
+
             # time.sleep_ms(10)
             time.sleep_us(sleep_time)
             cnt += 1
 
-            #
-            if cnt == 400:
+            if cnt == self.AVG_NUM:
                 elapsed = (time.ticks_ms() - stime)
                 stime = time.ticks_ms()
                 if elapsed > self.REFRESH_RATE+50:
@@ -195,7 +196,7 @@ class DustMain():
 
                 self.refresh_screen()
                 self.init_buttons()
-                print('{}, {}, {}, {}'.format(cnt, elapsed, sleep_time, self.Vos))
+                #print('{}, {}, {}, {}'.format(cnt, elapsed, sleep_time, self.Vos))
                 cnt = 0
     
     def y_scale(self, v):
@@ -204,7 +205,7 @@ class DustMain():
     def refresh_screen(self):
         # Input
         vos = self.Vos * 1000.0
-        density = int(self.dust_sensor.computeDensity(self.Vos))
+        density = int(self.dust_sensor.computeDensity(self.Vos, self.VOC))
         self.volist[self.idx] = (vos, density)
         
         avos = abs(max(self.volist, key=lambda item:item[0])[0])
@@ -222,8 +223,8 @@ class DustMain():
         status = self.getDensityInfo(density)
         #self.indicator.clear(status['color'])
         self.indicator.area(0, 0, self.indicator.width(), self.indicator.height(), status['color'])
-        #self.indicator.text(0, 12, 'x1/{} {}mV {} ({}ug/m3)'.format(self.scale_factor, int(self.Vos * 1000.0), status['label'], '-' if density < 0 else density), ugfx.WHITE)
-        self.indicator.text(0, 12, '{}us Voc:{} {}ug/m3 : {}'.format(self.SAMPLING_TIME, self.dust_sensor.Voc, '-' if density < 0 else density, status['label']), ugfx.WHITE)
+        #self.indicator.text(0, 12, 'x1/{} {}mV {} ({}ug/m3)'.format(self.scale_factor, int(Vo * 1000.0), status['label'], '-' if density < 0 else density), ugfx.WHITE)
+        self.indicator.text(0, 12, '{}us Voc:{} {}ug/m3 : {}'.format(self.SAMPLING_TIME, self.VOC, '-' if density < 0 else density, status['label']), ugfx.WHITE)
 
         # draw
         py = self.y_offset
