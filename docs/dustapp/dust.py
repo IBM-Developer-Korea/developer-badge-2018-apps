@@ -15,8 +15,6 @@ sharpVoPin = ADC(Pin(36))
 # ADC Setup
 sharpVoPin.atten(ADC.ATTN_11DB)
 
-Vcc = 5
-
 # Output volate at no dust in V
 Voc = 0.6 # 0.1 to 1.1
 
@@ -42,14 +40,15 @@ def readValue():
     sharpLEDPin.value(1)
 
     # Compute the output voltage in Volts.
-    Vo = VoRaw / 4095.0 * 5.0
+    Vo = VoRaw / 4095.0 * 3.3
 
     # Convert to Dust Density in units of ug/m3.
     dV = Vo - Voc
     if dV < 0:
         dV = 0
         Voc = Vo
-    
+
+    # Convert to Dust Density in units of ug/m3.
     dustDensity = dV / K * 100.0
     
     print('VoRaw={}, Vo={} mV, Density={} ug/m3'.format(VoRaw, Vo*1000.0, dustDensity))
