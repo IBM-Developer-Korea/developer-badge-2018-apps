@@ -18,18 +18,18 @@ class DustMain():
 
     # Config
     IS_PM2_5 = False
+    IS_GRAPH_MODE = False # True
     IS_AUTOSCALE = True
     REFRESH_RATE = 1000 # 200
 
-    AVG_NUM = 400
     SAMPLING_TIME = 200 # 280
-    VOC = 0.0 # 0.6
+    K = 0.5 #
+    VocRaw = 160
 
     # Levels
     X_RESOLUTION = 40 # 320
     volist = [(0, 0)] * X_RESOLUTION
-    idx = 0
-    
+
     # scale_factor
     scale_factor = 1 if IS_AUTOSCALE else 10
     p_scale = scale_factor
@@ -47,27 +47,25 @@ class DustMain():
     MISE8_PM2_5 = [0, 9, 16, 21, 26, 38, 51, 76]
 
     PM10_LEVELS = [
-        ('UNKNOWN',  sys.maxsize, ugfx.HTML2COLOR(0x654c9d)),
-        ('HELL',     151, ugfx.BLACK),
-        ('VERY BAD', 101, ugfx.HTML2COLOR(0xd3312e)),
-        ('QUITE BAD', 76, ugfx.HTML2COLOR(0xe35225)),
-        ('BAD',       51, ugfx.HTML2COLOR(0xf78d1d)),
-        ('MODERATE',  41, ugfx.HTML2COLOR(0x329042)),
-        ('GOOD',      31, ugfx.HTML2COLOR(0x12afc0)),
-        ('VERY GOOD', 16, ugfx.HTML2COLOR(0x299cd5)),
-        ('BEST',       0, ugfx.HTML2COLOR(0x2b75c0)),
+        ('Hell',     151, ugfx.BLACK),
+        ('Severe',   101, ugfx.HTML2COLOR(0xd3312e)),
+        ('Very bad',  76, ugfx.HTML2COLOR(0xe35225)),
+        ('Bad',       51, ugfx.HTML2COLOR(0xf78d1d)),
+        ('Moderate',  41, ugfx.HTML2COLOR(0x329042)),
+        ('Good',      31, ugfx.HTML2COLOR(0x12afc0)),
+        ('Very good', 16, ugfx.HTML2COLOR(0x299cd5)),
+        ('Best',       0, ugfx.HTML2COLOR(0x2b75c0)),
     ]
 
     PM2_5_LEVELS = [
-        ('UNKNOWN',   sys.maxsize, ugfx.HTML2COLOR(0x654c9d)),
-        ('HELL',      76, ugfx.BLACK),
-        ('VERY BAD',  51, ugfx.HTML2COLOR(0xd3312e)),
-        ('QUITE BAD', 38, ugfx.HTML2COLOR(0xe35225)),
-        ('BAD',       26, ugfx.HTML2COLOR(0xf78d1d)),
-        ('MODERATE',  21, ugfx.HTML2COLOR(0x329042)),
-        ('GOOD',      16, ugfx.HTML2COLOR(0x12afc0)),
-        ('VERY GOOD',  9, ugfx.HTML2COLOR(0x299cd5)),
-        ('BEST',       0, ugfx.HTML2COLOR(0x2b75c0)),
+        ('Hell',      76, ugfx.BLACK),
+        ('Severe',    51, ugfx.HTML2COLOR(0xd3312e)),
+        ('Very bad',  38, ugfx.HTML2COLOR(0xe35225)),
+        ('Bad',       26, ugfx.HTML2COLOR(0xf78d1d)),
+        ('Morderate', 21, ugfx.HTML2COLOR(0x329042)),
+        ('Good',      16, ugfx.HTML2COLOR(0x12afc0)),
+        ('Very good',  9, ugfx.HTML2COLOR(0x299cd5)),
+        ('Best',       0, ugfx.HTML2COLOR(0x2b75c0)),
     ]
 
     def getDensityInfo(self, density):
@@ -81,7 +79,7 @@ class DustMain():
                     'color': color
                 }
 
-        lb, lv, color = levels[0]
+        lb, lv, color = levels[-1]
         return {
             'label': lb,
             'level': lv,
@@ -101,23 +99,26 @@ class DustMain():
         if pressed:
             self.SAMPLING_TIME = self.SAMPLING_TIME - 20
 
-    # Decrease Voc
+    
     def select_left_cb(self, pressed=True):
-        if pressed:
-            self.VOC = round(self.VOC - 0.1, 3)
+        pass
 
-    # Increase Voc
     def select_right_cb(self, pressed=True):
-        if pressed:
-            self.VOC = round(self.VOC + 0.1, 3)
+        pass
 
     def select_a_cb(self, pressed=True):
-        self.VOC = 0.0 # 0.6
-        self.SAMPLING_TIME = 200 # 280
+        if pressed:
+            self.SAMPLING_TIME = 200 # 280
 
-    # Back to home
+    # Toggle mode
     def select_b_cb(self, pressed=True):
-        run('home')
+        if pressed:
+            self.IS_GRAPH_MODE = not(self.IS_GRAPH_MODE)
+            
+            if self.IS_GRAPH_MODE:
+                self.draw_graph()
+            else:
+                self.draw_legend()
 
     def init_buttons(self):
         # JOY Buttons Handler
@@ -137,133 +138,183 @@ class DustMain():
         
         # Buttons
         ugfx.input_init()
+        self.init_buttons()
 
         # Container
         width = ugfx.width()
         height = ugfx.height()
-        ind_height = 40
-        ind_pos = height - ind_height
+        ind_height = 66
+        container_height = height - ind_height
 
-        self.indicator = ugfx.Container(0, ind_pos, width, ind_height, style=styles.ibm_st)
-        self.container = ugfx.Container(0, 0, width, ind_pos, style=styles.ibm_st)
+        self.indicator = ugfx.Container(0, 0, width, ind_height, style=styles.ibm_st)
+        self.container = ugfx.Container(0, ind_height, width, container_height, style=styles.ibm_st)
 
-        self.y_offset = ind_pos - 10
+        self.graph_basepos = container_height - 5
         
         # Sensor
-        self.dust_sensor = gp2y1014au.GP2Y1014AU(iled=32, vo=36, K=0.5, Voc=self.VOC)
+        self.dust_sensor = gp2y1014au.GP2Y1014AU(iled=32, vo=36, K=0.5, Voc=0.6)
         
         # Smooth
-        self.Vos = 0.1 # 0.8
+        self.VosRaw = 300
 
     def run(self):
 
-        # Show container
-        self.container.show()
+        # Show window
         self.indicator.show()
+        self.container.show()
+
+        # Title
+        self.indicator.area(0, 0, self.indicator.width(), self.indicator.height(), ugfx.BLACK)
+        ugfx.string_box(0, 0, self.indicator.width(), self.indicator.height(), 'PM10 Dust Monitor', 'IBMPlexMono_Bold24', ugfx.WHITE, ugfx.justifyCenter)
+
+        if not self.IS_GRAPH_MODE:
+            self.draw_legend()
 
         stime = time.ticks_ms()
 
-        cnt = 0
-        sleep_time = 2000
+        idx = 0
+        sleep_time = 8000
+        isStable = False
         while True:
+
             #Vo = self.dust_sensor.readVo(280, 40)
             VoRaw = self.dust_sensor.readVoRaw(self.SAMPLING_TIME, 0)
-
-            # Compute the output in Volts.
-            Vo = VoRaw / 4095.0 * 5.0
-            # Vo = self.dust_sensor.readVo(self.SAMPLING_TIME, 0)
 
             # Exponential Moving Average
             # https://www.investopedia.com/terms/e/ema.asp
             # EMA(t) = Value(t)*k + EMA(y) * (1-k)
             # k = 2 / (N+1)
             # k = 0.005 where N = 399
-            self.Vos = Vo * 0.005 + self.Vos * 0.995
+            self.VosRaw = VoRaw * 0.005 + self.VosRaw * 0.995
 
-            # print('{}, {}'.format(VoRaw, self.Vos * 1000.0))
+            dVos = self.VosRaw - self.VocRaw
+            if dVos < 0:
+                dVos = 0
+                if isStable:
+                    self.VocRaw = int(self.VosRaw)
 
-            # time.sleep_ms(10)
+            # Compute the output in Volts.
+            dV = dVos / 4095.0 * 3.3 # 3.3V
+            
+            # Convert to Dust Density in units of ug/m3.
+            dustDensity = dV / self.K * 100.0
+
+            elapsed = (time.ticks_ms() - stime)
+            #print('{}, {}, {}'.format(VoRaw, int(self.VosRaw), elapsed))
+
+            stime = time.ticks_ms()
+            if elapsed > 10:
+                sleep_time -= 100
+            elif elapsed < 10:
+                sleep_time += 100
+
             time.sleep_us(sleep_time)
-            cnt += 1
+            idx += 1
 
-            if cnt == self.AVG_NUM:
-                elapsed = (time.ticks_ms() - stime)
-                stime = time.ticks_ms()
-                if elapsed > self.REFRESH_RATE+50:
-                    sleep_time -= 100
-                elif elapsed < self.REFRESH_RATE-50:
-                    sleep_time += 100
-
-                self.refresh_screen()
-                self.init_buttons()
-                #print('{}, {}, {}, {}'.format(cnt, elapsed, sleep_time, self.Vos))
-                cnt = 0
+            if idx % 400 == 0:
+                
+                self.refresh_screen(int(self.VosRaw), self.VocRaw, dustDensity)
+                # self.init_buttons()
+                #print('{}, {}, {}, {}'.format(idx, elapsed, sleep_time, self.Vos))
+                if idx > 400:
+                    idx = 0
+                    isStable = True
+                
     
     def y_scale(self, v):
         return int(v / self.scale_factor)
 
-    def refresh_screen(self):
-        # Input
-        vos = self.Vos * 1000.0
-        density = int(self.dust_sensor.computeDensity(self.Vos, self.VOC))
-        self.volist[self.idx] = (vos, density)
+    def refresh_screen(self, VoRawAvg, VocRaw, dustDensity):
+
+        # volist runs as ring buffer
+        self.volist.append((VoRawAvg, dustDensity))
+        self.volist.pop(0)
+
+        # Indicator
+        status = self.getDensityInfo(dustDensity)
         
+        self.indicator.area(0, 0, self.indicator.width(), self.indicator.height(), status['color'])
+        self.indicator.text(3, 6, 'VoRawAvg:{} Voc:{} {}us'.format(VoRawAvg, VocRaw, self.SAMPLING_TIME), ugfx.WHITE)
+        self.indicator.text(3, 26, 'Density:{}ug/m3'.format(dustDensity), ugfx.WHITE)
+        self.indicator.text(3, 46, 'PM10 AQI: {}'.format(status['label']), ugfx.WHITE)
+
+        # Graph
+        if self.IS_GRAPH_MODE:
+            self.draw_graph()
+
+    def draw_graph(self):
         avos = abs(max(self.volist, key=lambda item:item[0])[0])
 
         # Scale
         if self.IS_AUTOSCALE:
-            limits = self.y_offset - 10
+            limits = self.graph_basepos - 10
             if avos > limits:
                 self.scale_factor = int(avos / limits)+1
                 if self.scale_factor != self.p_scale:
-                    ugfx.clear(ugfx.WHITE)
+                    self.container.area(0, 0, self.container.width(), self.container.height(), ugfx.WHITE)
                 self.p_scale = self.scale_factor
 
-        # Indicator
-        status = self.getDensityInfo(density)
-        #self.indicator.clear(status['color'])
-        self.indicator.area(0, 0, self.indicator.width(), self.indicator.height(), status['color'])
-        #self.indicator.text(0, 12, 'x1/{} {}mV {} ({}ug/m3)'.format(self.scale_factor, int(Vo * 1000.0), status['label'], '-' if density < 0 else density), ugfx.WHITE)
-        self.indicator.text(0, 12, '{}us Voc:{} {}ug/m3 : {}'.format(self.SAMPLING_TIME, self.VOC, '-' if density < 0 else density, status['label']), ugfx.WHITE)
-
-        # draw
-        py = self.y_offset
+        # Graph
+        # clear
+        self.container.area(0, 0, self.container.width(), self.container.height(), ugfx.WHITE)
+        py = self.graph_basepos
         px = 0
         for i, (v, d) in enumerate(self.volist):
             x = int (i / self.X_RESOLUTION * self.container.width() )
-            y = self.y_offset - self.y_scale(v)
+            y = self.graph_basepos - self.y_scale(v)
 
             # Color
             lvcolor = self.getLevelColor(d)
 
             # draw
-            if i == self.idx+1:
-                # clear oldest
-                self.container.area(px, 0, x, self.y_offset, ugfx.WHITE)
-            else:
-                # previous
-                #container.thickline(px, py, x, y, lvcolor, 5, True)
+            # if i == self.idx+1:
+            #     # clear oldest
+            #     self.container.area(px, 0, x, self.graph_basepos, ugfx.WHITE)
+            # else:
+            #     # previous
+            #     #container.thickline(px, py, x, y, lvcolor, 5, True)
+            #     self.container.line(px, py, x, y, lvcolor)
+            if i != 0:
                 self.container.line(px, py, x, y, lvcolor)
             
             px = x
             py = y
 
         # baseline
-        self.container.line(0, self.y_offset, self.container.width(), self.y_offset, ugfx.BLACK)
+        self.container.line(0, self.graph_basepos, self.container.width(), self.graph_basepos, ugfx.BLACK)
 
         # ruler
         y = 0
-        maxy = self.y_offset * self.scale_factor
+        maxy = self.graph_basepos * self.scale_factor
 
         while y < maxy:
-            sy = self.y_offset  - self.y_scale(y)
+            sy = self.graph_basepos  - self.y_scale(y)
             self.container.line(0, sy, 20 if y%500 == 0 else 10, sy, ugfx.BLACK)
             y += 100
 
-        # increase
-        self.idx += 1
-        if self.idx == self.X_RESOLUTION:
-            self.idx = 0
+    def draw_legend(self):
+        self.container.area(0, 0, self.container.width(), self.container.height(), ugfx.BLACK)
+        levels = self.PM2_5_LEVELS if self.IS_PM2_5 else self.PM10_LEVELS
+        
+        y_offset = self.container.height()
+        h = 20
+        pv = -1
+        for i, (lb, lv, color) in enumerate(levels):
+            self.container.area(0, y_offset-h, self.container.width(), h, color)
+            self.container.text(3, y_offset-h+2, lb, ugfx.WHITE)
+
+            if i != len(levels)-1:
+                self.container.text(150, y_offset-h+2, str(lv), ugfx.WHITE)
+            
+            self.container.text(180, y_offset-h+2, " ~ ", ugfx.WHITE)
+
+            if i != 0:
+                self.container.text(200, y_offset-h+2, str(pv), ugfx.WHITE)
+            else:
+                self.container.text(270, y_offset-h+2, 'v1.0', ugfx.WHITE)
+
+            pv = lv - 1            
+            y_offset = y_offset - h
 
     def restart(self):
         util.run('dustapp')
