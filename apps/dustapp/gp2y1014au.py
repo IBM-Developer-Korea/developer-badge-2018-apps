@@ -28,7 +28,7 @@ class GP2Y1014AU():
         VoRaw = self.readVoRaw(samplingTime, deltaTime)
 
         # Compute the output in Volts.
-        return VoRaw / self.resolution * 5.0
+        return VoRaw / self.resolution * 3.3
 
     def readVoRaw(self, samplingTime, deltaTime):
         # Turn on ILED

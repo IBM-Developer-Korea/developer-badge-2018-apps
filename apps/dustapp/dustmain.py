@@ -17,14 +17,14 @@ except ImportError:
 class DustMain():
 
     # Config
-    IS_PM2_5 = False
+    IS_PM2_5 = True
     IS_GRAPH_MODE = False # True
     IS_AUTOSCALE = True
     REFRESH_RATE = 1000 # 200
 
     SAMPLING_TIME = 200 # 280
     K = 0.5 #
-    VocRaw = 160
+    Voc = 0.270 # 0.6
 
     # Levels
     X_RESOLUTION = 40 # 320
@@ -101,10 +101,13 @@ class DustMain():
 
     
     def select_left_cb(self, pressed=True):
-        pass
+        if pressed:
+            self.Voc = self.Voc - 0.01
 
     def select_right_cb(self, pressed=True):
-        pass
+        # pass
+        if pressed:
+            self.Voc = self.Voc + 0.01
 
     def select_a_cb(self, pressed=True):
         if pressed:
@@ -155,7 +158,7 @@ class DustMain():
         self.dust_sensor = gp2y1014au.GP2Y1014AU(iled=32, vo=36, K=0.5, Voc=0.6)
         
         # Smooth
-        self.VosRaw = 300
+        self.Vos = 0
 
     def run(self):
 
@@ -175,27 +178,25 @@ class DustMain():
         idx = 0
         sleep_time = 8000
         isStable = False
+        begin_time = time.ticks_ms()
         while True:
 
-            #Vo = self.dust_sensor.readVo(280, 40)
-            VoRaw = self.dust_sensor.readVoRaw(self.SAMPLING_TIME, 0)
+            Vo = self.dust_sensor.readVo(self.SAMPLING_TIME, 40)
+            # VoRaw = self.dust_sensor.readVoRaw(self.SAMPLING_TIME, 0)
 
             # Exponential Moving Average
             # https://www.investopedia.com/terms/e/ema.asp
             # EMA(t) = Value(t)*k + EMA(y) * (1-k)
             # k = 2 / (N+1)
             # k = 0.005 where N = 399
-            self.VosRaw = VoRaw * 0.005 + self.VosRaw * 0.995
+            self.Vos = Vo * 0.005 + self.Vos * 0.995
 
-            dVos = self.VosRaw - self.VocRaw
-            if dVos < 0:
-                dVos = 0
+            dV = self.Vos - self.Voc
+            if dV < 0:
+                dV = 0
                 if isStable:
-                    self.VocRaw = int(self.VosRaw)
+                    self.Voc = self.Vos
 
-            # Compute the output in Volts.
-            dV = dVos / 4095.0 * 3.3 # 3.3V
-            
             # Convert to Dust Density in units of ug/m3.
             dustDensity = dV / self.K * 100.0
 
@@ -209,41 +210,51 @@ class DustMain():
                 sleep_time += 100
 
             time.sleep_us(sleep_time)
+
+            # Next
             idx += 1
 
+            # Not stable before 10 secs
+            if not isStable:
+                if (time.ticks_ms() - begin_time) < 10000:
+                    # Wait...
+                    sys.stdout.write(".")
+                    if idx%80==0:
+                        print('')
+                    continue
+                print('')
+                isStable = True
+
             if idx % 400 == 0:
-                
-                self.refresh_screen(int(self.VosRaw), self.VocRaw, dustDensity)
+                idx = 0
+                self.refresh_screen(self.Vos, self.Voc, dustDensity)
                 # self.init_buttons()
                 #print('{}, {}, {}, {}'.format(idx, elapsed, sleep_time, self.Vos))
-                if idx > 400:
-                    idx = 0
-                    isStable = True
-                
     
     def y_scale(self, v):
         return int(v / self.scale_factor)
 
-    def refresh_screen(self, VoRawAvg, VocRaw, dustDensity):
+    def refresh_screen(self, Vo, Voc, dustDensity):
 
         # volist runs as ring buffer
-        self.volist.append((VoRawAvg, dustDensity))
+        self.volist.append((int(Vo*1000), dustDensity))
         self.volist.pop(0)
 
         # Indicator
         status = self.getDensityInfo(dustDensity)
         
         self.indicator.area(0, 0, self.indicator.width(), self.indicator.height(), status['color'])
-        self.indicator.text(3, 6, 'VoRawAvg:{} Voc:{} {}us'.format(VoRawAvg, VocRaw, self.SAMPLING_TIME), ugfx.WHITE)
-        self.indicator.text(3, 26, 'Density:{}ug/m3'.format(dustDensity), ugfx.WHITE)
-        self.indicator.text(3, 46, 'PM10 AQI: {}'.format(status['label']), ugfx.WHITE)
-
+        self.indicator.text(3, 6, 'Vo: {}mV Voc:{}mV     {}us'.format(int(Vo*1000), int(Voc*1000), self.SAMPLING_TIME), ugfx.WHITE)
+        self.indicator.text(3, 26, 'Density: {}ug/m3'.format(round(dustDensity, 1)), ugfx.WHITE)
+        self.indicator.text(3, 46, '{} AQI: {}'.format('PM2.5' if self.IS_PM2_5 else 'PM10', status['label']), ugfx.WHITE)
         # Graph
         if self.IS_GRAPH_MODE:
             self.draw_graph()
 
     def draw_graph(self):
         avos = abs(max(self.volist, key=lambda item:item[0])[0])
+        width = self.container.width()
+        height = self.container.height()
 
         # Scale
         if self.IS_AUTOSCALE:
@@ -251,16 +262,16 @@ class DustMain():
             if avos > limits:
                 self.scale_factor = int(avos / limits)+1
                 if self.scale_factor != self.p_scale:
-                    self.container.area(0, 0, self.container.width(), self.container.height(), ugfx.WHITE)
+                    self.container.area(0, 0, width, height, ugfx.WHITE)
                 self.p_scale = self.scale_factor
 
         # Graph
         # clear
-        self.container.area(0, 0, self.container.width(), self.container.height(), ugfx.WHITE)
+        self.container.area(0, 0, width, height, ugfx.WHITE)
         py = self.graph_basepos
         px = 0
         for i, (v, d) in enumerate(self.volist):
-            x = int (i / self.X_RESOLUTION * self.container.width() )
+            x = int (i / self.X_RESOLUTION * width )
             y = self.graph_basepos - self.y_scale(v)
 
             # Color
@@ -281,15 +292,19 @@ class DustMain():
             py = y
 
         # baseline
-        self.container.line(0, self.graph_basepos, self.container.width(), self.graph_basepos, ugfx.BLACK)
+        self.container.line(0, self.graph_basepos, width, self.graph_basepos, ugfx.BLACK)
 
         # ruler
         y = 0
         maxy = self.graph_basepos * self.scale_factor
 
         while y < maxy:
-            sy = self.graph_basepos  - self.y_scale(y)
-            self.container.line(0, sy, 20 if y%500 == 0 else 10, sy, ugfx.BLACK)
+            scaled_y = self.y_scale(y)
+            sy = self.graph_basepos  - scaled_y
+            #self.container.line(0, sy, 20 if y%500 == 0 else 10, sy, ugfx.BLACK)
+            self.container.line(width, sy, width-10, sy, ugfx.BLACK)
+            if not y==0:
+                self.container.text(width-32, sy, str(y), ugfx.RED)
             y += 100
 
     def draw_legend(self):
