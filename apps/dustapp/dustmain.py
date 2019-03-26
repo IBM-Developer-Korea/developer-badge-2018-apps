@@ -7,6 +7,9 @@ import utime as time
 import urequests
 import ugfx
 
+from dustapp.iotfoundation import IoTFoundation
+from dustapp.buzzer import Buzzer
+
 from home import styles
 
 try:
@@ -173,6 +176,9 @@ class DustMain():
         if not self.IS_GRAPH_MODE:
             self.draw_legend()
 
+        # IoTF
+        self.iotf = IoTFoundation()
+
         stime = time.ticks_ms()
 
         idx = 0
@@ -211,6 +217,9 @@ class DustMain():
 
             time.sleep_us(sleep_time)
 
+            # IoT
+            self.iotf.process()
+
             # Next
             idx += 1
 
@@ -247,6 +256,19 @@ class DustMain():
         self.indicator.text(3, 6, 'Vo: {}mV Voc:{}mV     {}us'.format(int(Vo*1000), int(Voc*1000), self.SAMPLING_TIME), ugfx.WHITE)
         self.indicator.text(3, 26, 'Density: {}ug/m3'.format(round(dustDensity, 1)), ugfx.WHITE)
         self.indicator.text(3, 46, '{} AQI: {}'.format('PM2.5' if self.IS_PM2_5 else 'PM10', status['label']), ugfx.WHITE)
+
+        # IoT
+                # self.iotf.send_dustinfo(int(Vo*1000), int(Voc*1000), round(dustDensity, 1))
+
+
+        self.iotf.send_dustinfo({
+            'vo': int(Vo*1000),
+            'voc': int(Voc*1000), 
+            'density': round(dustDensity, 1),
+            'status': status['label'],
+            'mode': 'PM2.5' if self.IS_PM2_5 else 'PM10'
+        })
+
         # Graph
         if self.IS_GRAPH_MODE:
             self.draw_graph()
