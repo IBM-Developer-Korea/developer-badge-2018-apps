@@ -171,7 +171,7 @@ class DustMain():
 
         # Title
         self.indicator.area(0, 0, self.indicator.width(), self.indicator.height(), ugfx.BLACK)
-        ugfx.string_box(0, 0, self.indicator.width(), self.indicator.height(), 'PM10 Dust Monitor', 'IBMPlexMono_Bold24', ugfx.WHITE, ugfx.justifyCenter)
+        ugfx.string_box(0, 0, self.indicator.width(), self.indicator.height(), 'AQI Dust Monitor', 'IBMPlexMono_Bold24', ugfx.WHITE, ugfx.justifyCenter)
 
         if not self.IS_GRAPH_MODE:
             self.draw_legend()
