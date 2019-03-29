@@ -9,11 +9,13 @@ import util
 
 
 class Button:
-    def __init__(self, grp, text, callback):
-        self.btn = ugfx.Button(grp.x, grp.y, grp.w, grp.h,
-            text, shape=ugfx.Button.ROUNDED, parent=grp.parent)
+    def __init__(self, page, text, callback, data):
+        self.btn = ugfx.Button(page.x, page.y, page.group.w, page.group.h,
+            text, shape=ugfx.Button.ROUNDED, parent=page.group.parent)
         self.btn.enabled(False)
+        self.btn.visible(False)
         self.callback = callback
+        self.data = data
 
     def defocus(self):
         #self.btn.detach_input(0)
@@ -24,55 +26,126 @@ class Button:
         self.btn.set_focus()
         self.btn.enabled(True)
 
+    def call(self):
+        self.callback(self.data)
 
 class ButtonGroup:
-    def __init__(self, parent, x, y, w, h, gap, vertical=True):
+    def __init__(self, parent, x, y, w, h, gap, vertical=True, per_page=4):
         self.parent = parent
         self.x = x
         self.y = y
         self.w = w
         self.h = h
         self.gap = gap
+        self.pages = []
         self.btns = []
         self.index = 0
         self.current = None
         self.vertical = vertical
+        self.per_page = per_page
+        self.current_page = ButtonPage(self, None)
         if vertical:
             self.prev_key = ugfx.JOY_UP
             self.next_key = ugfx.JOY_DOWN
+            self.prev_page_key = ugfx.JOY_LEFT
+            self.next_page_key = ugfx.JOY_RIGHT
         else:
             self.prev_key = ugfx.JOY_LEFT
             self.next_key = ugfx.JOY_RIGHT
+            self.prev_page_key = ugfx.JOY_UP
+            self.next_page_key = ugfx.JOY_DOWN
 
     def add(self, text, callback, data=None):
-        btn = Button(self, text, callback)
-        btn.data = data
-        self.btns.append(btn)
-        if self.current:
-            self.current.next_btn = btn
-            btn.prev_btn = self.current
-        self.current = btn
-        if self.vertical:
-            self.y += self.h + self.gap
-        else:
-            self.x += self.w + self.gap
+        self.current_page = self.current_page.add_button(text, callback, data)
 
     def end(self):
-        if self.btns:
-            self.btns[0].prev_btn = self.current
-            self.current.next_btn = self.btns[0]
-            self.next(True)
+        if self.pages:
+            self.pages[0].prev_page = self.current_page
+            self.current_page.next_page = self.pages[0]
+            self.current_page.end()
+            self.next_page(True)
             self.attach_input()
 
     def attach_input(self):
         ugfx.input_attach(self.next_key, self.next)
         ugfx.input_attach(self.prev_key, self.prev)
+        if len(self.pages) > 1:
+            ugfx.input_attach(self.next_page_key, self.next_page)
+            ugfx.input_attach(self.prev_page_key, self.prev_page)
         ugfx.input_attach(ugfx.BTN_A, self.select)
 
     def detach_input(self):
         ugfx.input_attach(self.next_key, None)
         ugfx.input_attach(self.prev_key, None)
+        ugfx.input_attach(self.next_page_key, None)
+        ugfx.input_attach(self.prev_page_key, None)
         ugfx.input_attach(ugfx.BTN_A, None)
+
+    def prev(self, pressed):
+        self.current_page.prev(pressed)
+
+    def next(self, pressed):
+        self.current_page.next(pressed)
+
+    def prev_page(self, pressed):
+        return self.next_page(pressed, False)
+
+    def next_page(self, pressed, is_next=True):
+        if pressed:
+            self.current_page.visible(False)
+            if is_next:
+                self.current_page = self.current_page.next_page
+            else:
+                self.current_page = self.current_page.prev_page
+            self.current_page.visible(True)
+
+    def select(self, pressed=True):
+        if not pressed:
+            self.current_page.current.call()
+
+    def destroy(self, pressed=True):
+        self.detach_input()
+        if pressed:
+            while self.pages:
+                self.pages.pop().destroy()
+
+
+class ButtonPage:
+    def __init__(self, group, prev_page):
+        self.group = group
+        self.x, self.y = group.x, group.y
+        group.pages.append(self)
+        self.id = len(group.pages)
+        if prev_page:
+            self.prev_page = prev_page
+            prev_page.next_page = self
+            # Hide previous page
+            prev_page.visible(False)
+        self.btns = []
+        self.current = None
+
+    def add_button(self, text, callback, data):
+        if len(self.btns) >= self.group.per_page:
+            self.end()
+            new_page = ButtonPage(self.group, self)
+            new_page.add_button(text, callback, data)
+            return new_page
+        btn = Button(self, text, callback, data)
+        self.btns.append(btn)
+        self.group.btns.append(btn)
+        if self.current:
+            self.current.next_btn = btn
+            btn.prev_btn = self.current
+        self.current = btn
+        if self.group.vertical:
+            self.y += self.group.h + self.group.gap
+        else:
+            self.x += self.group.w + self.group.gap
+        return self
+
+    def visible(self, value):
+        for button in self.btns:
+            button.btn.visible(value)
 
     def prev(self, pressed):
         if pressed:
@@ -86,13 +159,14 @@ class ButtonGroup:
             self.current = self.current.next_btn
             self.current.focus()
 
-    def select(self, pressed=True):
-        if not pressed:
-            self.current.callback(self.current.data)
+    def end(self):
+        if self.btns:
+            self.btns[0].prev_btn = self.current
+            self.current.next_btn = self.btns[0]
+            self.next(True)
 
     def destroy(self, pressed=True):
         if pressed:
-            self.detach_input()
             while self.btns:
                 self.btns.pop().btn.destroy()
 
