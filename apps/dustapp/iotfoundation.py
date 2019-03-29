@@ -44,7 +44,7 @@ class IoTFoundation():
     def init_iotf(self):
         # Check for network availability
         print('Waiting for network')
-        if not util.wait_network():
+        if not util.wait_network(3):
             print('Cannot connect WiFi')
             raise Exception('Cannot connect WiFi')
         
@@ -60,37 +60,26 @@ class IoTFoundation():
         clientID = 'd:' + orgId + ':' + deviceType + ':' + deviceId
         broker = orgId + '.messaging.internetofthings.ibmcloud.com'
 
-        # Check for device registration
-        url = 'https://hongjs-nodered.mybluemix.net/api/badge2018/type/{}/register'.format(deviceType)
-        payload = {
-            'deviceId': deviceId,
-            'authToken': authToken,
-            # 'deviceInfo': {},
-            # 'groups': [],
-            # 'location': {},
-            # 'metadata': {}
-        }
-        headers = {'token':'helloiot'}
-        r = urequests.post(url, json=payload, headers=headers)
-        if r.status_code == 201:
-          print('OK')
-        elif r.status_code == 409:
-          print('Already Exists')
-        else:
-          print(r.text)
-          raise Exception(r.text)
-        r.close()
-
         self.deviceId = deviceId
 
-        self.mqtt = simple.MQTTClient(clientID, broker, user=user, password=authToken, ssl=True)
+        if orgId == 'quickstart':
+            self.mqtt = simple.MQTTClient(clientID, broker)
+        else:
+            self.mqtt = simple.MQTTClient(clientID, broker, user=user, password=authToken, ssl=True)
         self.mqtt.set_callback(self.sub_cb)
         self.mqtt.connect()
-        self.mqtt.subscribe(self.COMMAND_TOPIC_LED)
-        self.mqtt.subscribe(self.COMMAND_TOPIC_BUZZER)
+
+        if orgId == 'quickstart':
+            print('https://quickstart.internetofthings.ibmcloud.com/?deviceId=test#/device/{}'.format(deviceId))
+        else:
+            self.mqtt.subscribe(self.COMMAND_TOPIC_LED)
+            self.mqtt.subscribe(self.COMMAND_TOPIC_BUZZER)
 
         print('DeviceID is {}'.format(deviceId))
         print('IoT Ready')
+
+    def getDeviceId(self):
+        return self.deviceId
 
     def sub_cb(self, topic, msg):
         obj = json.loads(msg)

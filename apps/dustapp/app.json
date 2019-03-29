@@ -1,5 +1,5 @@
 {
-    "version": 1.0,
+    "version": 1.1,
     "name": "Dust Sensor",
-    "desc": "Dust Sensor App"
+    "desc": "AQI Dust Monitor with IoT Platform"
 }

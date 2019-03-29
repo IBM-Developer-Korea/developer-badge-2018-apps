@@ -1,4 +1,4 @@
-orgId = "ua3ev8"
+orgId = "quickstart"
 deviceType = "badge2018"
 #deviceId =
 user = "use-token-auth"
