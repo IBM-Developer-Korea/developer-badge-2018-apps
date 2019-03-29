@@ -7,6 +7,9 @@ import utime as time
 import urequests
 import ugfx
 
+from dustapp.iotfoundation import IoTFoundation
+from dustapp.buzzer import Buzzer
+
 from home import styles
 
 try:
@@ -23,7 +26,7 @@ class DustMain():
     REFRESH_RATE = 1000 # 200
 
     SAMPLING_TIME = 200 # 280
-    K = 0.5 #
+    K = 0.3 # 0.5
     Voc = 0.270 # 0.6
 
     # Levels
@@ -160,6 +163,10 @@ class DustMain():
         # Smooth
         self.Vos = 0
 
+    def showTitleText(self, text):
+        self.indicator.area(0, 0, self.indicator.width(), self.indicator.height(), ugfx.BLACK)
+        ugfx.string_box(0, 0, self.indicator.width(), self.indicator.height(), text, 'IBMPlexMono_Bold24', ugfx.WHITE, ugfx.justifyCenter)
+
     def run(self):
 
         # Show window
@@ -167,11 +174,24 @@ class DustMain():
         self.container.show()
 
         # Title
-        self.indicator.area(0, 0, self.indicator.width(), self.indicator.height(), ugfx.BLACK)
-        ugfx.string_box(0, 0, self.indicator.width(), self.indicator.height(), 'PM10 Dust Monitor', 'IBMPlexMono_Bold24', ugfx.WHITE, ugfx.justifyCenter)
+        # self.indicator.area(0, 0, self.indicator.width(), self.indicator.height(), ugfx.BLACK)
+        # ugfx.string_box(0, 0, self.indicator.width(), self.indicator.height(), 'AQI Dust Monitor', 'IBMPlexMono_Bold24', ugfx.WHITE, ugfx.justifyCenter)
+        self.showTitleText('AQI Dust Monitor')
 
         if not self.IS_GRAPH_MODE:
             self.draw_legend()
+
+        # IoTF
+        try:
+            self.iotf = IoTFoundation()
+            self.showTitleText('Device ID {}'.format(self.iotf.deviceId))
+        except Exception as e:
+            print(e)
+            self.showTitleText('Network Failed')
+            self.iotf = None
+
+        time.sleep(1)
+        self.showTitleText('Intializing...')
 
         stime = time.ticks_ms()
 
@@ -211,6 +231,10 @@ class DustMain():
 
             time.sleep_us(sleep_time)
 
+            # IoT
+            if self.iotf != None:
+                self.iotf.process()
+
             # Next
             idx += 1
 
@@ -218,6 +242,14 @@ class DustMain():
             if not isStable:
                 if (time.ticks_ms() - begin_time) < 10000:
                     # Wait...
+                    if idx%6==0:
+                        # self.showTitleText('Intializing...')
+                        x = 240
+                        self.indicator.area(x, 0, self.indicator.width()-x, self.indicator.height(), ugfx.BLACK)
+                    else:
+                        # self.showTitleText('Intializing...')
+                        ugfx.string_box(0, 0, self.indicator.width(), self.indicator.height(), 'Intializing...', 'IBMPlexMono_Bold24', ugfx.WHITE, ugfx.justifyCenter)
+
                     sys.stdout.write(".")
                     if idx%80==0:
                         print('')
@@ -225,7 +257,7 @@ class DustMain():
                 print('')
                 isStable = True
 
-            if idx % 400 == 0:
+            if idx % 100 == 0:
                 idx = 0
                 self.refresh_screen(self.Vos, self.Voc, dustDensity)
                 # self.init_buttons()
@@ -247,6 +279,19 @@ class DustMain():
         self.indicator.text(3, 6, 'Vo: {}mV Voc:{}mV     {}us'.format(int(Vo*1000), int(Voc*1000), self.SAMPLING_TIME), ugfx.WHITE)
         self.indicator.text(3, 26, 'Density: {}ug/m3'.format(round(dustDensity, 1)), ugfx.WHITE)
         self.indicator.text(3, 46, '{} AQI: {}'.format('PM2.5' if self.IS_PM2_5 else 'PM10', status['label']), ugfx.WHITE)
+
+        # IoT
+        # self.iotf.send_dustinfo(int(Vo*1000), int(Voc*1000), round(dustDensity, 1))
+
+        if self.iotf != None:
+            self.iotf.send_dustinfo({
+                'vo': int(Vo*1000),
+                'voc': int(Voc*1000), 
+                'density': round(dustDensity, 1),
+                'status': status['label'],
+                'mode': 'PM2.5' if self.IS_PM2_5 else 'PM10'
+            })
+
         # Graph
         if self.IS_GRAPH_MODE:
             self.draw_graph()
