@@ -2,8 +2,8 @@ import ugfx, time
 from dht import DHT11, DHT22
 
 def main():
-    h = DHT11(machine.Pin(33)) # J8
-    #h = DHT11(machine.Pin(26)) # J7
+    #h = DHT11(machine.Pin(33)) # J8
+    h = DHT11(machine.Pin(26)) # J7
 
     ugfx.set_default_font('IBMPlexMono_Bold24')
     ugfx.clear()
