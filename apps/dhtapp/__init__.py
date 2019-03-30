@@ -1,4 +1,4 @@
-import ugfx, time
+import ugfx, time, machine
 from dht import DHT11, DHT22
 
 def main():
