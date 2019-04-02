@@ -1,0 +1,5 @@
+{
+    "version": 1.0,
+    "name": "Remote Controler",
+    "desc": "Send and receive IR remote control signals"
+}
