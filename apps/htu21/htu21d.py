@@ -13,7 +13,7 @@ class HTU21D(object):
             scl (int): Pin id where the sdl pin is connected to
             sda (int): Pin id where the sda pin is connected to
         """
-        self.i2c = I2C(scl=Pin(scl), sda=Pin(sda), freq=100000)
+        self.i2c = I2C(scl=Pin(scl, Pin.OPEN_DRAIN, Pin.PULL_UP), sda=Pin(sda, Pin.OPEN_DRAIN, Pin.PULL_UP), freq=100000)
 
     def _crc_check(self, value):
         """CRC check data

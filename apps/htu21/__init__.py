@@ -11,7 +11,7 @@ def main():
 
     while True:
         try:
-            l.text('{}'.format(h.temperature))
+            l.text('{:.1f} C\n{:.1f} %'.format(h.temperature, h.humidity))
         except OSError:
             l.text('OSError')
         time.sleep(0.5)
