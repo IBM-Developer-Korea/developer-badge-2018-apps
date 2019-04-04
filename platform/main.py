@@ -2,6 +2,7 @@ import gc
 import sys
 
 import util
+import ugfx
 from util import *
 
 rtc = machine.RTC()
@@ -17,6 +18,7 @@ if appname:
     app = __import__(appname.decode('ascii'))
     app.main()
 else: # Cold boot
+    ugfx.init()
     util.display_logo()
     util.startup()
     try:

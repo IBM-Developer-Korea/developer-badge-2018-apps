@@ -9,4 +9,4 @@ ap_if = network.WLAN(network.AP_IF)
 import webrepl
 webrepl.start()
 
-ugfx.init()
+#ugfx.init()

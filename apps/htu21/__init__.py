@@ -4,6 +4,8 @@ import ugfx
 from htu21 import htu21d
 
 def main():
+    ugfx.init()
+    
     h = htu21d.HTU21D(25, 26)
 
     ugfx.set_default_font('IBMPlexMono_Bold48')
