@@ -257,6 +257,10 @@ class Display:
     def close_status_box(self):
         self.status_box.destroy()
 
+    def __close_status_box(self, pressed=True):
+        if not pressed:
+            self.status_box.destroy()
+
     def install_ota(self, data):
         self.destroy()
         print('On the air update..')
@@ -285,7 +289,7 @@ class Display:
         ugfx.set_default_font('IBMPlexSans_Regular18')
         self.create_status_box()
         ugfx.set_default_font(self.default_font)
-
+        ugfx.input_attach(ugfx.BTN_A, self.__close_status_box)
         try:
             ota_data = ota.check_version()
         except ota.OtaException as e:
