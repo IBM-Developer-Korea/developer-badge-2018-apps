@@ -25,6 +25,7 @@ class DustMain():
     IS_AUTOSCALE = True
     REFRESH_RATE = 1000 # 200
 
+    STABILIZATION_TIME = 10000
     SAMPLING_TIME = 200 # 280
     K = 0.3 # 0.5
     Voc = 0.270 # 0.6
@@ -240,7 +241,7 @@ class DustMain():
 
             # Not stable before 10 secs
             if not isStable:
-                if (time.ticks_ms() - begin_time) < 10000:
+                if (time.ticks_ms() - begin_time) < self.STABILIZATION_TIME:
                     # Wait...
                     if idx%6==0:
                         # self.showTitleText('Intializing...')
@@ -342,6 +343,10 @@ class DustMain():
         # ruler
         y = 0
         maxy = self.graph_basepos * self.scale_factor
+        steps = 5
+        step = int(maxy/steps/50)*50
+        if step < 100:
+            step = 100
 
         while y < maxy:
             scaled_y = self.y_scale(y)
@@ -349,8 +354,9 @@ class DustMain():
             #self.container.line(0, sy, 20 if y%500 == 0 else 10, sy, ugfx.BLACK)
             self.container.line(width, sy, width-10, sy, ugfx.BLACK)
             if not y==0:
-                self.container.text(width-32, sy, str(y), ugfx.RED)
-            y += 100
+                tw = 42 if y >=1000 else 32
+                self.container.text(width-tw, sy, str(y), ugfx.RED)
+            y += step
 
     def draw_legend(self):
         self.container.area(0, 0, self.container.width(), self.container.height(), ugfx.BLACK)
