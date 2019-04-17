@@ -4,6 +4,7 @@ import network
 import time
 import ujson as json
 import uos
+import upip
 
 import ugfx
 
@@ -79,6 +80,47 @@ def wait_network(timeout=10, interval=0.2):
         timeout -= interval
     return False
 
+def download_file(url, filename=None):
+    if filename is None:
+        filename = url.split('/')[-1]
+
+    print('Downloading file from {}.'.format(url))
+    print('It will be saved as \'{}\''.format(filename))
+
+    try:
+        st = uos.stat(filename)
+        raise Exception('Already exist file')
+    except OSError:
+        pass
+
+    if not wait_network(5):
+        raise Exception('Not connected: check your internet')
+
+    gc.collect()
+
+    s = upip.url_open(url)
+    s.setblocking(False)
+
+    with open(filename, 'w') as f:
+        BUF_LEN = 256
+        try:
+            while True:
+                data = s.read(BUF_LEN)
+                print('.',end='')
+                # print(data,end='')
+                if data is None or len(data) < BUF_LEN:
+                    break
+                f.write(data)
+        except Exception as e:
+            s.close()
+            f.close()
+            raise e
+
+    s.close()
+    print('\n')
+
+def cat_file(filename):
+    open(filename,"rb").read()
 
 class Config:
     config_dir = '/config'
