@@ -117,10 +117,21 @@ def download_file(url, filename=None):
             raise e
 
     s.close()
-    print('\n')
+    print('')
 
 def cat_file(filename):
-    open(filename,"rb").read()
+    with open(filename, 'rb') as f:
+        BUF_LEN = 256
+        try:
+            while True:
+                data = f.read(BUF_LEN)
+                if data is None or len(data) < BUF_LEN:
+                    break
+                print(data,end='')
+        except Exception as e:
+            raise e
+    f.close()
+    print('')
 
 class Config:
     config_dir = '/config'
